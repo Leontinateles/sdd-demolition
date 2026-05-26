@@ -114,8 +114,8 @@ body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-s
 .ccj-amt{font-size:14px;font-weight:600;color:var(--gold);}
 .ccj-date{font-size:10px;color:var(--muted2);}
 /* MODAL */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
-.modal-bg.open{display:flex;}
+.modal-bg{display:flex;visibility:hidden;pointer-events:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+.modal-bg.open{visibility:visible;pointer-events:all;}
 .modal-box{background:var(--surface);border-radius:16px;width:100%;max-width:660px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
 .modal-head{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0;}
 .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;}
@@ -320,7 +320,7 @@ svg{display:block;}
     <a class="nav-item" href="/sdd-invoices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Invoices</a>
     <a class="nav-item" href="/sdd-vendors.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Vendors</a>
   </nav>
-  <button class="btn btn-gold" id="btnNewCustomer">
+  <button class="btn btn-gold" id="btnNewCustomer" onclick="openModal()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     New customer
   </button>
@@ -336,7 +336,8 @@ svg{display:block;}
       <div class="filter-row">
         <div class="filter-chip active" id="chip-all">All</div>
         <div class="filter-chip" id="chip-active">Active</div>
-        <div class="filter-chip" id="chip-billing">Billing due</div>
+        <div class="filter-chip" id="chip-billing" onclick="setFilter('billing')">Billing due</div>
+        <div class="filter-chip" id="chip-incomplete" onclick="setFilter('incomplete')" style="border-color:rgba(200,130,42,.4);color:var(--warning);">⚠ Pending</div>
       </div>
     </div>
     <div class="customer-list" id="customerList"></div>
@@ -350,315 +351,7 @@ svg{display:block;}
 </div>
 
 <!-- ══ NEW CUSTOMER MODAL ══ -->
-<div class="modal-bg" id="modalBg">
-  <div class="modal-box">
-    <div class="modal-head">
-      <div class="modal-title">New customer</div>
-      <button class="btn btn-ghost btn-sm" id="btnCloseModal">✕ Cancel</button>
-    </div>
-    <div class="modal-body">
 
-      <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>Company information</div>
-        <div class="ff">
-          <label>Company / Customer name <span class="req">*</span></label>
-          <input type="text" id="f_company" placeholder="e.g. ABC Construction Corp">
-          <div class="ferr" id="e_company">Required</div>
-        </div>
-        <div class="ff" style="margin-bottom:0;">
-          <label>Customer type <span class="req">*</span></label>
-          <div style="display:flex;gap:24px;margin-top:10px;">
-            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 18px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;" id="lbl_commercial"
-              onmouseover="this.style.borderColor='var(--gold)'" onmouseout="if(!document.getElementById('f_commercial').checked)this.style.borderColor='var(--border2)'">
-              <input type="radio" name="customer_type" id="f_commercial" value="commercial"
-                style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;"
-                onchange="onTypeChange()">
-              🏢 Commercial
-            </label>
-            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 18px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;" id="lbl_residential"
-              onmouseover="this.style.borderColor='var(--gold)'" onmouseout="if(!document.getElementById('f_residential').checked)this.style.borderColor='var(--border2)'">
-              <input type="radio" name="customer_type" id="f_residential" value="residential"
-                style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;"
-                onchange="onTypeChange()">
-              🏠 Residential
-            </label>
-          </div>
-          <div class="ferr" id="e_type" style="margin-top:6px;">Please select a customer type</div>
-        </div>
-      </div>
-
-      <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Primary contact</div>
-        <div class="fg2">
-          <div class="ff">
-            <label>First name <span class="req">*</span></label>
-            <input type="text" id="f_fname" placeholder="Maria">
-            <div class="ferr" id="e_fname">Required</div>
-          </div>
-          <div class="ff">
-            <label>Last name <span class="req">*</span></label>
-            <input type="text" id="f_lname" placeholder="Rodriguez">
-            <div class="ferr" id="e_lname">Required</div>
-          </div>
-          <div class="ff">
-            <label>Phone number <span class="req">*</span></label>
-            <input type="tel" id="f_phone" placeholder="(619) 555-0000">
-            <div class="ferr" id="e_phone">Required</div>
-          </div>
-          <div class="ff">
-            <label>Email address <span class="req">*</span></label>
-            <input type="email" id="f_email" placeholder="contact@company.com">
-            <div class="ferr" id="e_email">Required</div>
-          </div>
-          <div class="ff">
-            <label>Title / position</label>
-            <input type="text" id="f_title" placeholder="Project Manager">
-          </div>
-        </div>
-      </div>
-
-      <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Physical address</div>
-        <div class="addr-box">
-          <div class="addr-lbl"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Street address</div>
-          <div class="fg3" style="margin-bottom:10px;">
-            <div class="ff">
-              <label>Street number <span class="req">*</span></label>
-              <input type="text" id="f_snum" placeholder="1420">
-              <div class="ferr" id="e_snum">Required</div>
-            </div>
-            <div class="ff">
-              <label>Street name <span class="req">*</span></label>
-              <input type="text" id="f_sname" placeholder="Harbor">
-              <div class="ferr" id="e_sname">Required</div>
-            </div>
-            <div class="ff">
-              <label>Street type <span class="req">*</span></label>
-              <select id="f_stype">
-                <option value="">Select…</option>
-                <option>Street</option><option>Avenue</option><option>Boulevard</option>
-                <option>Circle</option><option>Court</option><option>Drive</option>
-                <option>Lane</option><option>Place</option><option>Road</option>
-                <option>Trail</option><option>Way</option><option>Highway</option>
-                <option>Parkway</option><option>Terrace</option><option>Loop</option>
-              </select>
-              <div class="ferr" id="e_stype">Required</div>
-            </div>
-          </div>
-          <div class="fg2" style="margin-bottom:10px;">
-            <div class="ff">
-              <label>Unit type <span class="opt-tag">(if applicable)</span></label>
-              <select id="f_utype">
-                <option value="">None</option><option>Suite</option><option>Unit</option>
-                <option>Apartment</option><option>Number</option><option>Floor</option>
-              </select>
-            </div>
-            <div class="ff">
-              <label>Unit number <span class="opt-tag">(if applicable)</span></label>
-              <input type="text" id="f_unum" placeholder="e.g. 200, A">
-            </div>
-          </div>
-          <div class="fg3">
-            <div class="ff">
-              <label>City <span class="req">*</span></label>
-              <input type="text" id="f_city" placeholder="San Diego">
-              <div class="ferr" id="e_city">Required</div>
-            </div>
-            <div class="ff">
-              <label>State <span class="req">*</span></label>
-              <select id="f_state">
-                <option value="">Select…</option>
-                <option>AL</option><option>AK</option><option>AZ</option><option>AR</option>
-                <option selected>CA</option><option>CO</option><option>CT</option><option>DE</option>
-                <option>FL</option><option>GA</option><option>HI</option><option>ID</option>
-                <option>IL</option><option>IN</option><option>IA</option><option>KS</option>
-                <option>KY</option><option>LA</option><option>ME</option><option>MD</option>
-                <option>MA</option><option>MI</option><option>MN</option><option>MS</option>
-                <option>MO</option><option>MT</option><option>NE</option><option>NV</option>
-                <option>NH</option><option>NJ</option><option>NM</option><option>NY</option>
-                <option>NC</option><option>ND</option><option>OH</option><option>OK</option>
-                <option>OR</option><option>PA</option><option>RI</option><option>SC</option>
-                <option>SD</option><option>TN</option><option>TX</option><option>UT</option>
-                <option>VT</option><option>VA</option><option>WA</option><option>WV</option>
-                <option>WI</option><option>WY</option>
-              </select>
-              <div class="ferr" id="e_state">Required</div>
-            </div>
-            <div class="ff">
-              <label>ZIP code <span class="req">*</span></label>
-              <input type="text" id="f_zip" placeholder="92101" maxlength="10">
-              <div class="ferr" id="e_zip">Required</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-    <div class="modal-foot">
-      <div style="font-size:11px;color:var(--muted);">Fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost" id="btnCancelModal">Cancel</button>
-        <button class="btn btn-gold" id="btnSaveCustomer">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Save customer
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- ══ ADD CONTACT MODAL ══ -->
-<div class="modal-bg" id="addContactModal" style="display:none;">
-  <div class="modal-box" style="max-width:580px;">
-    <div class="modal-head">
-      <div class="modal-title">Add contact</div>
-      <button class="btn btn-ghost btn-sm" onclick="closeAddContactModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <!-- CONTACT TYPE -->
-      <div class="ff" style="margin-bottom:16px;">
-        <label>Contact type <span class="req">*</span></label>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-          <label class="ac-type-lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
-            <input type="radio" name="ac_type" value="project-manager" id="ac_pm" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" onchange="highlightACType()"> 👷 Project Manager
-          </label>
-
-          <label class="ac-type-lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
-            <input type="radio" name="ac_type" value="additional" id="ac_additional" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" onchange="highlightACType()"> 👤 Additional
-          </label>
-        </div>
-        <div class="ferr" id="e_ac_type">Please select a contact type</div>
-      </div>
-
-      <!-- CONTACT FIELDS -->
-      <div class="fg2">
-        <div class="ff">
-          <label>First name <span class="req">*</span></label>
-          <input type="text" id="ac_fname" placeholder="First name"
-            oninput="this.style.borderColor=this.value.trim()?'var(--border2)':'var(--danger)'"
-            onblur="reqAC('ac_fname','e_ac_fname')">
-          <div class="ferr" id="e_ac_fname">Required</div>
-        </div>
-        <div class="ff">
-          <label>Last name <span class="req">*</span></label>
-          <input type="text" id="ac_lname" placeholder="Last name"
-            oninput="this.style.borderColor=this.value.trim()?'var(--border2)':'var(--danger)'"
-            onblur="reqAC('ac_lname','e_ac_lname')">
-          <div class="ferr" id="e_ac_lname">Required</div>
-        </div>
-        <div class="ff">
-          <label>Phone number</label>
-          <input type="tel" id="ac_phone" placeholder="(619) 555-0000">
-        </div>
-        <div class="ff">
-          <label>Email address <span class="req">*</span></label>
-          <input type="email" id="ac_email" placeholder="email@company.com"
-            oninput="this.style.borderColor=this.value.trim()?'var(--border2)':'var(--danger)'"
-            onblur="reqAC('ac_email','e_ac_email')">
-          <div class="ferr" id="e_ac_email">Required</div>
-        </div>
-        <div class="ff" id="ac_title_wrap">
-          <label>Title / position <span id="ac_title_req" style="color:var(--muted2);font-weight:400;font-size:11px;">(optional)</span></label>
-          <input type="text" id="ac_title" placeholder="e.g. Site Supervisor">
-        </div>
-      </div>
-
-      <!-- BILLING SECTION — only visible when Project Manager selected -->
-      <div id="pm_billing_section" style="display:none;margin-top:20px;padding-top:18px;border-top:2px solid var(--border);">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <span id="pm_billing_section_title">Billing information</span>
-        </div>
-
-        <!-- Question -->
-        <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
-          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;">
-            Is the billing information the same as primary contact information?
-          </div>
-          <div style="display:flex;gap:10px;">
-            <label id="pm_bill_yes_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-weight:500;transition:all .15s;">
-              <input type="radio" name="pm_billing" value="yes" id="pm_bill_yes"
-                onchange="togglePMBillingSame(true)"
-                style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
-              ✓ Yes — add as billing contact
-            </label>
-            <label id="pm_bill_no_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-weight:500;transition:all .15s;">
-              <input type="radio" name="pm_billing" value="no" id="pm_bill_no"
-                onchange="togglePMBillingSame(false)"
-                style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
-              No
-            </label>
-          </div>
-        </div>
-
-        <!-- Additional billing contacts linked to this PM -->
-        <div id="pm_extra_billing_wrap">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="21" y1="11" x2="21" y2="17"/><line x1="18" y1="14" x2="24" y2="14"/></svg>
-            Additional billing contacts linked to this PM
-          </div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">These contacts will be included when sending estimates or invoices to this PM.</div>
-
-          <!-- Added billing contacts list -->
-          <div id="pm_extra_billing_list" style="margin-bottom:12px;"></div>
-
-          <!-- Add new billing contact form -->
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
-            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Add billing contact</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-              <input type="text" id="pb_fname" placeholder="First name *"
-                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
-              <input type="text" id="pb_lname" placeholder="Last name *"
-                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-              <input type="email" id="pb_email" placeholder="Email address *"
-                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
-              <input type="tel" id="pb_phone" placeholder="Phone (optional)"
-                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
-            </div>
-            <button type="button" onclick="addExtraBillingContact()"
-              style="font-size:12px;font-weight:600;padding:8px 16px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(184,146,42,.08);color:var(--gold);cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add billing contact
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-foot">
-      <div style="font-size:11px;color:var(--muted);">Fields marked <span style="color:var(--danger);">*</span> required</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="closeAddContactModal()">Cancel</button>
-        <button class="btn btn-gold" onclick="saveAddContact()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Save contact
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- ══ STAT DETAIL POPUP ══ -->
-<div class="stat-popup-bg" id="statPopupBg">
-  <div class="stat-popup">
-    <div class="stat-popup-head">
-      <div>
-        <div class="stat-popup-title" id="spTitle"></div>
-        <div class="stat-popup-summary" id="spSummary"></div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="closeStatPopup()">✕</button>
-    </div>
-    <div class="stat-popup-body" id="spBody"></div>
-    <div class="stat-popup-foot">
-      <div style="font-size:12px;color:var(--muted);" id="spFootNote"></div>
-      <button class="btn btn-ghost btn-sm" id="spNavBtn" onclick="closeStatPopup()">Go to module →</button>
-    </div>
-  </div>
-</div>
 
 <!-- ══ ESTIMATE TYPE SELECTOR ══ -->
 <div class="type-sel-bg" id="typeSelectorBg">
@@ -875,6 +568,7 @@ function renderList(){
     if(!match) return false;
     if(activeFilter==='active') return getAllJobs(c).some(j=>j.status==='In progress');
     if(activeFilter==='billing') return getAllJobs(c).some(j=>j.status==='Ready to bill');
+    if(activeFilter==='incomplete') return c.incomplete===true;
     return true;
   });
   list.innerHTML = items.length ? items.map(c=>{
@@ -1727,408 +1421,122 @@ function deleteUploadedDoc(customerId, idx){
 }
 
 // ══ MODAL ══
-// ── NC STEP STATE ──
-let _ncStep = 1;
-let _ncExtraBill = [];
+let _ncStep=1,_ncCC=[];
 
 function openModal(){
-  _ncStep = 1;
-  _ncExtraBill = [];
-  // Clear all fields
-  ['f_company','f_fname','f_lname','f_phone','f_email',
-   'f_snum','f_sname','f_city','f_zip','f_unum',
-   'j_po','j_name','j_addr',
-   'pm_fname','pm_lname','pm_phone','pm_email',
-   'bc_fname','bc_lname','bc_email','bc_phone','bc_title',
-   'nceb_fname','nceb_lname','nceb_email','nceb_phone',
-   'nc_si_text'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  const _st=document.getElementById('f_stype'); if(_st) _st.value='';
-  const _ut=document.getElementById('f_utype'); if(_ut) _ut.value='';
-  const _ss=document.getElementById('f_state'); if(_ss) _ss.value='CA';
-  const _fc=document.getElementById('f_commercial'); if(_fc) _fc.checked=false;
-  const _fr=document.getElementById('f_residential'); if(_fr) _fr.checked=false;
-  const _lc=document.getElementById('lbl_commercial'); if(_lc) _lc.style.borderColor='var(--border2)';
-  const _lr=document.getElementById('lbl_residential'); if(_lr) _lr.style.borderColor='var(--border2)';
-  ['bc_same_pm','bc_same_primary','bc_same_other','nc_si_yes','nc_si_no'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.checked=false;
-  });
-  ['bc_same_pm_lbl','bc_same_primary_lbl','bc_same_other_lbl','nc_si_yes_lbl','nc_si_no_lbl'].forEach(id=>{
-    const el=document.getElementById(id); if(el){el.style.borderColor='var(--border2)';el.style.background='';}
-  });
-  const bcOther=document.getElementById('bc_other_fields'); if(bcOther) bcOther.style.display='none';
-  const siWrap=document.getElementById('nc_si_wrap'); if(siWrap) siWrap.style.display='none';
-  const ebl=document.getElementById('nc_extra_bill_list'); if(ebl) ebl.innerHTML='';
-  document.querySelectorAll('#modalBg .ferr').forEach(e=>e.classList.remove('show'));
-  ncRenderStep(1);
-  document.getElementById('modalBg').classList.add('open');
-}
-
-function ncRenderStep(step){
-  _ncStep = step;
-  [1,2,3].forEach(s=>{
-    const panel=document.getElementById('ncStep'+s); if(panel) panel.style.display=s===step?'block':'none';
-    const ind=document.getElementById('step_ind_'+s);
-    if(ind) ind.style.background = s<=step ? 'var(--gold)' : 'var(--border2)';
-    const lbl=document.getElementById('step_lbl_'+s);
-    if(lbl) lbl.style.color = s===step ? 'var(--gold)' : 'var(--muted)';
-  });
-  const btnBack=document.getElementById('ncBtnBack'); if(btnBack) btnBack.style.display=step>1?'':'none';
-  const btnSkip=document.getElementById('ncBtnSkip'); if(btnSkip) btnSkip.style.display=step>1?'':'none';
-  const btnNext=document.getElementById('ncBtnNext');
-  const btnLbl=document.getElementById('ncBtnNextLabel');
-  if(step===1){if(btnLbl) btnLbl.textContent='Job info';}
-  else if(step===2){if(btnLbl) btnLbl.textContent='Billing info';}
-  else{if(btnNext) btnNext.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Save customer';}
-  document.getElementById('ncModalTitle').textContent = step===1?'New customer — Step 1 of 3':step===2?'New customer — Step 2 of 3':'New customer — Step 3 of 3';
-}
-
-function ncNextStep(){
-  if(_ncStep===1){
-    // Validate step 1
-    let ok=true;
-    ok=reqFld('f_company','e_company')&&ok;
-    ok=reqFld('f_fname','e_fname')&&ok;
-    ok=reqFld('f_lname','e_lname')&&ok;
-    ok=reqFld('f_phone','e_phone')&&ok;
-    ok=reqFld('f_email','e_email')&&ok;
-    ok=reqFld('f_snum','e_snum')&&ok;
-    ok=reqFld('f_sname','e_sname')&&ok;
-    ok=reqFld('f_stype','e_stype')&&ok;
-    ok=reqFld('f_city','e_city')&&ok;
-    ok=reqFld('f_state','e_state')&&ok;
-    ok=reqFld('f_zip','e_zip')&&ok;
-    const comm=document.getElementById('f_commercial').checked;
-    const res=document.getElementById('f_residential').checked;
-    if(!comm&&!res){ document.getElementById('e_type').classList.add('show'); ok=false; }
-    else document.getElementById('e_type').classList.remove('show');
-    if(!ok) return;
-    ncRenderStep(2);
-  } else if(_ncStep===2){
-    ncRenderStep(3);
-  } else {
-    ncSaveCustomer();
-  }
-}
-
-function ncGoBack(){
-  if(_ncStep>1) ncRenderStep(_ncStep-1);
-}
-
-function ncSkipStep(){
-  if(_ncStep===2) ncRenderStep(3);
-  else if(_ncStep===3) ncSaveCustomer();
-}
-
-function ncBillSameChange(val){
-  ['bc_same_pm_lbl','bc_same_primary_lbl','bc_same_other_lbl'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.style.borderColor='var(--border2)';el.style.background='';}
-  });
-  const lbl=document.getElementById('bc_same_'+val+'_lbl');
-  if(lbl){lbl.style.borderColor='var(--gold)';lbl.style.background='rgba(184,146,42,.06)';}
-  const bcOther=document.getElementById('bc_other_fields');
-  if(bcOther) bcOther.style.display=val==='other'?'block':'none';
-}
-
-function ncSIToggle(yes){
-  const yl=document.getElementById('nc_si_yes_lbl');
-  const nl=document.getElementById('nc_si_no_lbl');
-  if(yl){yl.style.borderColor=yes?'var(--gold)':'var(--border2)';yl.style.background=yes?'rgba(184,146,42,.06)':'';}
-  if(nl){nl.style.borderColor=!yes?'var(--gold)':'var(--border2)';nl.style.background=!yes?'rgba(184,146,42,.06)':'';}
-  const w=document.getElementById('nc_si_wrap'); if(w) w.style.display=yes?'block':'none';
-}
-
-function ncAddExtraBill(){
-  const fn=(document.getElementById('nceb_fname')||{value:''}).value.trim();
-  const ln=(document.getElementById('nceb_lname')||{value:''}).value.trim();
-  const em=(document.getElementById('nceb_email')||{value:''}).value.trim();
-  const ph=(document.getElementById('nceb_phone')||{value:''}).value.trim();
-  if(!em) return;
-  _ncExtraBill.push({fn,ln,em,ph});
-  ['nceb_fname','nceb_lname','nceb_email','nceb_phone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const list=document.getElementById('nc_extra_bill_list');
-  if(list) list.innerHTML=_ncExtraBill.map((c,i)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:13px;">
-      <span><strong>${c.fn} ${c.ln}</strong> · ${c.em}${c.ph?' · '+c.ph:''}</span>
-      <button onclick="_ncExtraBill.splice(${i},1);ncAddExtraBill()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;">✕</button>
-    </div>`).join('');
-}
-
-function ncSaveCustomer(){
-  const g = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
-  const snum=g('f_snum'), sname=g('f_sname'), stype=g('f_stype');
-  const utype=g('f_utype'), unum=g('f_unum');
-  const city=g('f_city'), state=g('f_state'), zip=g('f_zip');
-  let addr=snum+' '+sname+' '+stype;
-  if(utype&&unum) addr+=', '+utype+' '+unum;
-  const fullAddr=addr+', '+city+' '+state+' '+zip;
-  const fname=g('f_fname'), lname=g('f_lname');
-  const avColors=['av-gold','av-info','av-success','av-warning'];
-  const initials=((fname[0]||'')+(lname[0]||'')).toUpperCase();
-  const newId=Math.max(...CUSTOMERS.map(c=>c.id))+1;
-  const typeVal=document.getElementById('f_residential')?.checked?'residential':'commercial';
-
-  // Build contacts
-  const contacts=[{
-    id:'c_'+Date.now(), name:fname+' '+lname, initials,
-    color:avColors[0], email:g('f_email'),
-    phone:g('f_phone'), title:'Project Manager',
-    role:'project-manager', jobs:[]
-  }];
-
-  // Add PM from step 2 if filled
-  const pmFn=g('pm_fname'), pmLn=g('pm_lname'), pmEm=g('pm_email');
-  if(pmFn&&pmEm){
-    contacts.push({
-      id:'c_'+Date.now()+'pm', name:pmFn+' '+pmLn,
-      initials:((pmFn[0]||'')+(pmLn[0]||'')).toUpperCase(),
-      color:avColors[1], email:pmEm, phone:g('pm_phone'),
-      title:'Project Manager', role:'project-manager', jobs:[]
-    });
-  }
-
-  // Billing contact from step 3
-  const bcSame=document.querySelector('input[name="bc_same"]:checked')?.value;
-  if(bcSame==='pm'&&(pmFn||fname)){
-    const src=pmFn?{name:pmFn+' '+pmLn,email:pmEm,phone:g('pm_phone'),initials:((pmFn[0]||'')+(pmLn[0]||'')).toUpperCase()}:{name:fname+' '+lname,email:g('f_email'),phone:g('f_phone'),initials};
-    contacts.push({id:'b_'+Date.now(),name:src.name,initials:src.initials,color:avColors[2],email:src.email,phone:src.phone,title:'',role:'billing',billingTo:true,billingCc:false,pmRef:src.name,jobs:[]});
-  } else if(bcSame==='primary'){
-    contacts.push({id:'b_'+Date.now(),name:fname+' '+lname,initials,color:avColors[2],email:g('f_email'),phone:g('f_phone'),title:'',role:'billing',billingTo:true,billingCc:false,pmRef:fname+' '+lname,jobs:[]});
-  } else if(bcSame==='other'){
-    const bfn=g('bc_fname'),bln=g('bc_lname'),bem=g('bc_email');
-    if(bfn&&bem) contacts.push({id:'b_'+Date.now(),name:bfn+' '+bln,initials:((bfn[0]||'')+(bln[0]||'')).toUpperCase(),color:avColors[2],email:bem,phone:g('bc_phone'),title:g('bc_title'),role:'billing',billingTo:true,billingCc:false,pmRef:'',jobs:[]});
-  }
-
-  // Extra CC billing contacts
-  _ncExtraBill.forEach((ec,i)=>{
-    contacts.push({id:'b_'+Date.now()+i,name:ec.fn+' '+ec.ln,initials:((ec.fn[0]||'')+(ec.ln[0]||'')).toUpperCase(),color:avColors[i%avColors.length],email:ec.em,phone:ec.ph,title:'',role:'billing',billingTo:false,billingCc:true,pmRef:'',jobs:[]});
-  });
-
-  const siYes=document.getElementById('nc_si_yes')?.checked;
-
-  CUSTOMERS.unshift({
-    id:newId,
-    name:g('f_company'),
-    city:city+', '+state,
-    address:fullAddr,
-    phone:g('f_phone'),
-    since:g('nc_since')||new Date().getFullYear().toString(),
-    type:typeVal,
-    waiver:g('nc_waiver')||'conditional',
-    portal:g('nc_billing')==='Client portal',
-    notes:'',
-    specialInstructions:siYes||false,
-    specialInstructionsText:siYes?(g('nc_si_text')||''):'',
-    billingMethod:g('nc_billing')||'direct-email',
-    sov:false, sovEstimates:[],
-    contacts
-  });
-
-  closeModal();
-  activeId=newId;
-  renderList();
-  renderDetail(newId);
-
-  const flash=document.createElement('div');
-  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
-  flash.textContent='✓ Customer created successfully';
-  document.body.appendChild(flash);
-  setTimeout(()=>flash.remove(),3000);
+  _ncStep=1; _ncCC=[];
+  ['nc_company','nc_fname','nc_lname','nc_phone','nc_email','nc_snum','nc_sname','nc_city','nc_zip',
+   'nc_po','nc_jobname','nc_jobaddr','nc_pm_fn','nc_pm_ln','nc_pm_ph','nc_pm_em',
+   'nc_bc_fn','nc_bc_ln','nc_bc_em','nc_bc_ph','nc_bc_ti','nc_cc_fn','nc_cc_ln','nc_cc_em','nc_cc_ph','nc_si_text'
+  ].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const st=document.getElementById('nc_stype');if(st)st.value='';
+  ['nc_commercial','nc_residential','nc_bc_pm','nc_bc_pri','nc_bc_oth','nc_si_yes','nc_si_no'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=false;});
+  ['nc_lbl_comm','nc_lbl_res','nc_bc_pm_lbl','nc_bc_pri_lbl','nc_bc_oth_lbl','nc_si_y_lbl','nc_si_n_lbl'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.borderColor='var(--border2)';el.style.background='';}});
+  const bco=document.getElementById('nc_bc_other');if(bco)bco.style.display='none';
+  const siw=document.getElementById('nc_si_wrap');if(siw)siw.style.display='none';
+  const ccl=document.getElementById('nc_cc_list');if(ccl)ccl.innerHTML='';
+  document.querySelectorAll('#modalBg .ferr').forEach(e=>{if(e&&e.classList)e.classList.remove('show');});
+  ncGo(1);
+  const mb=document.getElementById('modalBg');
+  if(mb){mb.classList.add('open');mb.style.visibility='visible';mb.style.pointerEvents='all';}
 }
 
 function closeModal(){
-  document.getElementById('modalBg').classList.remove('open');
+  const mb=document.getElementById('modalBg');
+  if(mb){mb.classList.remove('open');mb.style.visibility='hidden';mb.style.pointerEvents='none';}
 }
 
-function addExtraContact(){
-  extraContactCount++;
-  const i = extraContactCount;
-  const div = document.createElement('div');
-  div.className = 'extra-contact';
-  div.id = 'ec-' + i;
-  div.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Contact ${i}</div>
-      <button class="ec-remove" type="button" onclick="document.getElementById('ec-${i}').remove()">×</button>
-    </div>
-    <div class="ff" style="margin-bottom:14px;">
-      <label>Contact type <span class="req">*</span></label>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
-        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:500;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;transition:all .15s;" onclick="this.style.borderColor='var(--gold)';this.style.background='rgba(184,146,42,.06)';this.closest('.extra-contact').querySelectorAll('.ct-radio-lbl').forEach(l=>{if(l!==this){l.style.borderColor='var(--border2)';l.style.background='';}});" class="ct-radio-lbl">
-          <input type="radio" name="ec-type-${i}" value="project-manager" class="ec-type" style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;"> 👷 Project Manager
-        </label>
-        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:500;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;transition:all .15s;" onclick="this.style.borderColor='var(--gold)';this.style.background='rgba(184,146,42,.06)';this.closest('.extra-contact').querySelectorAll('.ct-radio-lbl').forEach(l=>{if(l!==this){l.style.borderColor='var(--border2)';l.style.background='';}});" class="ct-radio-lbl">
-          <input type="radio" name="ec-type-${i}" value="billing" class="ec-type" style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;"> 💳 Billing Contact
-        </label>
-        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:500;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;transition:all .15s;" onclick="this.style.borderColor='var(--gold)';this.style.background='rgba(184,146,42,.06)';this.closest('.extra-contact').querySelectorAll('.ct-radio-lbl').forEach(l=>{if(l!==this){l.style.borderColor='var(--border2)';l.style.background='';}});" class="ct-radio-lbl">
-          <input type="radio" name="ec-type-${i}" value="additional" class="ec-type" style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;"> 👤 Additional
-        </label>
-      </div>
-    </div>
-    <div class="fg2">
-      <div class="ff">
-        <label>First name <span class="req">*</span></label>
-        <input type="text" class="ec-fname" placeholder="First name" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
-      </div>
-      <div class="ff">
-        <label>Last name <span class="req">*</span></label>
-        <input type="text" class="ec-lname" placeholder="Last name" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
-      </div>
-      <div class="ff">
-        <label>Phone number <span class="req">*</span></label>
-        <input type="tel" class="ec-phone" placeholder="(619) 555-0000" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
-      </div>
-      <div class="ff">
-        <label>Email address <span class="req">*</span></label>
-        <input type="email" class="ec-email" placeholder="email@company.com" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
-      </div>
-      <div class="ff">
-        <label>Title / position</label>
-        <input type="text" class="ec-title" placeholder="e.g. Project Manager">
-      </div>
-    </div>`;
-  document.getElementById('extraContacts').appendChild(div);
-}
-
-function reqFld(id, errId){
-  const el=document.getElementById(id);
-  const ok=el&&el.value.trim()!=='';
-  if(el) el.classList.toggle('err',!ok);
-  const e=document.getElementById(errId);
-  if(e) e.classList.toggle('show',!ok);
-  return ok;
-}
-
-function saveCustomer(){ ncSaveCustomer(); }
-
-// ══ BILLING POPUP ══
-let _bpNewId = null;
-let _bpExtraContacts = [];
-
-function openBillingPopup(newId, customerName){
-  _bpNewId = newId;
-  _bpExtraContacts = [];
-  // Reset
-  const el = id => document.getElementById(id);
-  el('bpCustomerName').textContent = customerName;
-  ['bp_same_yes','bp_same_no','bp_si_yes','bp_si_no'].forEach(id=>{const e=el(id);if(e)e.checked=false;});
-  ['bp_same_yes_lbl','bp_same_no_lbl','bp_si_yes_lbl','bp_si_no_lbl'].forEach(id=>{
-    const e=el(id);if(e){e.style.borderColor='var(--border2)';e.style.background='';}
+function ncGo(step){
+  _ncStep=step;
+  [1,2,3].forEach(s=>{
+    const p=document.getElementById('ncStep'+s);if(p)p.style.display=s===step?'block':'none';
+    const b=document.getElementById('ncBar'+s);if(b)b.style.background=s<=step?'var(--gold)':'var(--border2)';
+    const l=document.getElementById('ncLbl'+s);if(l)l.style.color=s===step?'var(--gold)':s<step?'var(--muted)':'var(--muted2)';
   });
-  el('bp_diff_fields').style.display='none';
-  el('bp_si_text_wrap').style.display='none';
-  el('bp_extra_list').innerHTML='';
-  ['bp_fname','bp_lname','bp_email','bp_phone','bp_title','bp_si_text','bpe_fname','bpe_lname','bpe_email','bpe_phone'].forEach(id=>{const e=el(id);if(e)e.value='';});
-  el('bp_waiver').value='conditional';
-  el('bp_terms').value='Net 30';
-  el('bp_since').value='2026';
-  el('bp_billing_method').value='Direct email';
-  // Show popup
-  el('billingPopupBg').style.display='flex';
+  const t=document.getElementById('ncTitle');if(t)t.textContent='New customer — Step '+step+' of 3';
+  const back=document.getElementById('ncBtnBack');if(back)back.style.display=step>1?'':'none';
+  const skip=document.getElementById('ncBtnSkip');if(skip)skip.style.display=step>1?'':'none';
+  const later=document.getElementById('ncBtnLater');if(later)later.style.display=step>1?'':'none';
+  const btn=document.getElementById('ncBtnNext');
+  if(btn)btn.textContent=step===1?'Continue → Job info':step===2?'Continue → Billing info':'✓ Save customer';
 }
 
-function closeBillingPopup(){
-  document.getElementById('billingPopupBg').style.display='none';
+function ncNext(){
+  if(_ncStep===1){
+    let ok=true;
+    const chk=(id,eid)=>{const el=document.getElementById(id);const err=document.getElementById(eid);const v=el?el.value.trim():'';if(!v){if(err)err.classList.add('show');if(el)el.style.borderColor='var(--danger)';return false;}if(err)err.classList.remove('show');if(el)el.style.borderColor='';return true;};
+    ok=chk('nc_company','e_nc_company')&&ok;ok=chk('nc_fname','e_nc_fname')&&ok;ok=chk('nc_lname','e_nc_lname')&&ok;
+    ok=chk('nc_phone','e_nc_phone')&&ok;ok=chk('nc_email','e_nc_email')&&ok;
+    ok=chk('nc_snum','e_nc_snum')&&ok;ok=chk('nc_sname','e_nc_sname')&&ok;ok=chk('nc_stype','e_nc_stype')&&ok;
+    ok=chk('nc_city','e_nc_city')&&ok;ok=chk('nc_zip','e_nc_zip')&&ok;
+    const comm=document.getElementById('nc_commercial')?.checked;const res=document.getElementById('nc_residential')?.checked;
+    const et=document.getElementById('e_nc_type');if(!comm&&!res){if(et)et.classList.add('show');ok=false;}else{if(et)et.classList.remove('show');}
+    if(!ok){const fe=document.querySelector('#ncStep1 .ferr.show');if(fe)fe.scrollIntoView({behavior:'smooth',block:'center'});return;}
+    ncGo(2);
+  }else if(_ncStep===2){ncGo(3);}
+  else{ncSaveAll();}
 }
 
-function bpToggleSame(same){
-  const yLbl=document.getElementById('bp_same_yes_lbl');
-  const nLbl=document.getElementById('bp_same_no_lbl');
-  if(yLbl){yLbl.style.borderColor=same?'var(--gold)':'var(--border2)';yLbl.style.background=same?'rgba(184,146,42,.06)':'';}
-  if(nLbl){nLbl.style.borderColor=!same?'var(--gold)':'var(--border2)';nLbl.style.background=!same?'rgba(184,146,42,.06)':'';}
-  document.getElementById('bp_diff_fields').style.display=same?'none':'block';
+function ncBack(){if(_ncStep>1)ncGo(_ncStep-1);}
+function ncSkip(){if(_ncStep===2)ncGo(3);else ncSaveAll();}
+
+function ncTypeChange(){
+  const c=document.getElementById('nc_commercial')?.checked;const r=document.getElementById('nc_residential')?.checked;
+  const lc=document.getElementById('nc_lbl_comm');if(lc)lc.style.borderColor=c?'var(--gold)':'var(--border2)';
+  const lr=document.getElementById('nc_lbl_res');if(lr)lr.style.borderColor=r?'var(--gold)':'var(--border2)';
 }
 
-function bpToggleSI(yes){
-  const yLbl=document.getElementById('bp_si_yes_lbl');
-  const nLbl=document.getElementById('bp_si_no_lbl');
-  if(yLbl){yLbl.style.borderColor=yes?'var(--gold)':'var(--border2)';yLbl.style.background=yes?'rgba(184,146,42,.06)':'';}
-  if(nLbl){nLbl.style.borderColor=!yes?'var(--gold)':'var(--border2)';nLbl.style.background=!yes?'rgba(184,146,42,.06)':'';}
-  document.getElementById('bp_si_text_wrap').style.display=yes?'block':'none';
+function ncBillSame(val){
+  ['pm','pri','oth'].forEach(x=>{const l=document.getElementById('nc_bc_'+x+'_lbl');if(l){l.style.borderColor='var(--border2)';l.style.background='';}});
+  const lbl=document.getElementById('nc_bc_'+val+'_lbl');if(lbl){lbl.style.borderColor='var(--gold)';lbl.style.background='rgba(184,146,42,.07)';}
+  const oth=document.getElementById('nc_bc_other');if(oth)oth.style.display=val==='other'?'block':'none';
 }
 
-function bpAddExtraContact(){
-  const fn=(document.getElementById('bpe_fname')||{value:''}).value.trim();
-  const ln=(document.getElementById('bpe_lname')||{value:''}).value.trim();
-  const em=(document.getElementById('bpe_email')||{value:''}).value.trim();
-  const ph=(document.getElementById('bpe_phone')||{value:''}).value.trim();
-  if(!em) return;
-  _bpExtraContacts.push({fn,ln,em,ph});
-  ['bpe_fname','bpe_lname','bpe_email','bpe_phone'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  const list=document.getElementById('bp_extra_list');
-  if(list) list.innerHTML=_bpExtraContacts.map((c,i)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:13px;">
-      <div><strong>${c.fn} ${c.ln}</strong> &nbsp;·&nbsp; ${c.em}${c.ph?' · '+c.ph:''}</div>
-      <button onclick="_bpExtraContacts.splice(${i},1);bpAddExtraContact()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;">✕</button>
-    </div>`).join('');
+function ncSIToggle(yes){
+  const yl=document.getElementById('nc_si_y_lbl');if(yl){yl.style.borderColor=yes?'var(--gold)':'var(--border2)';yl.style.background=yes?'rgba(184,146,42,.07)':'';}
+  const nl=document.getElementById('nc_si_n_lbl');if(nl){nl.style.borderColor=!yes?'var(--gold)':'var(--border2)';nl.style.background=!yes?'rgba(184,146,42,.07)':'';}
+  const w=document.getElementById('nc_si_wrap');if(w)w.style.display=yes?'block':'none';
 }
 
-function saveBillingPopup(){
-  const c = CUSTOMERS.find(x=>x.id===_bpNewId);
-  if(!c) { closeBillingPopup(); return; }
-  const el = id => document.getElementById(id);
-  const avColors=['av-gold','av-info','av-success','av-warning'];
+function ncAddCC(){
+  const g=id=>(document.getElementById(id)||{value:''}).value.trim();
+  const fn=g('nc_cc_fn'),ln=g('nc_cc_ln'),em=g('nc_cc_em'),ph=g('nc_cc_ph');
+  if(!em)return;
+  _ncCC.push({fn,ln,em,ph});
+  ['nc_cc_fn','nc_cc_ln','nc_cc_em','nc_cc_ph'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const list=document.getElementById('nc_cc_list');
+  if(list)list.innerHTML=_ncCC.map((c,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:13px;"><span><strong>${c.fn} ${c.ln}</strong> · ${c.em}${c.ph?' · '+c.ph:''}</span><button onclick="_ncCC.splice(${i},1);ncAddCC()" style="background:none;border:none;cursor:pointer;color:var(--muted);">×</button></div>`).join('');
+}
 
-  // Billing preferences
-  c.waiver = el('bp_waiver').value;
-  c.since  = el('bp_since').value;
-  c.portal = el('bp_billing_method').value==='Client portal';
-  c.billingTerms = el('bp_terms').value;
-
-  // Special instructions
-  const siYes = el('bp_si_yes').checked;
-  c.specialInstructions = siYes;
-  c.specialInstructionsText = siYes ? (el('bp_si_text').value.trim()||'') : '';
-
-  // Primary contact as billing (TO)?
-  const sameYes = el('bp_same_yes').checked;
-  const pm = c.contacts[0];
-  if(sameYes && pm){
-    c.contacts.push({
-      id:'b_'+Date.now(), name:pm.name, initials:pm.initials,
-      color:avColors[1], email:pm.email, phone:pm.phone||'',
-      title:'', role:'billing', billingTo:true, billingCc:false,
-      pmRef:pm.name, jobs:[]
-    });
-  } else if(!sameYes){
-    const bfn=el('bp_fname').value.trim();
-    const bln=el('bp_lname').value.trim();
-    const bem=el('bp_email').value.trim();
-    if(bfn&&bem){
-      const binit=((bfn[0]||'')+(bln[0]||'')).toUpperCase();
-      c.contacts.push({
-        id:'b_'+Date.now(), name:bfn+' '+bln, initials:binit,
-        color:avColors[1], email:bem, phone:el('bp_phone').value.trim()||'',
-        title:el('bp_title').value.trim()||'', role:'billing',
-        billingTo:true, billingCc:false, pmRef:'', jobs:[]
-      });
-    }
+function ncBuildAndSave(incomplete){
+  const g=id=>(document.getElementById(id)||{value:''}).value.trim();
+  const addr=g('nc_snum')+' '+g('nc_sname')+' '+g('nc_stype')+', '+g('nc_city')+' '+(g('nc_state')||'CA')+' '+g('nc_zip');
+  const fn=g('nc_fname'),ln=g('nc_lname'),init=((fn[0]||'')+(ln[0]||'')).toUpperCase();
+  const newId=Math.max(...CUSTOMERS.map(c=>c.id))+1;
+  const typeVal=document.getElementById('nc_residential')?.checked?'residential':'commercial';
+  const avC=['av-gold','av-info','av-success','av-warning'];
+  const contacts=[{id:'c_'+Date.now(),name:fn+' '+ln,initials:init,color:avC[0],email:g('nc_email'),phone:g('nc_phone'),title:'Primary Contact',role:'project-manager',jobs:[]}];
+  if(!incomplete){
+    const pfn=g('nc_pm_fn'),pln=g('nc_pm_ln'),pem=g('nc_pm_em');
+    if(pfn&&pem)contacts.push({id:'c_'+Date.now()+'p',name:pfn+' '+pln,initials:((pfn[0]||'')+(pln[0]||'')).toUpperCase(),color:avC[1],email:pem,phone:g('nc_pm_ph'),title:'Project Manager',role:'project-manager',jobs:[]});
+    const bcVal=document.querySelector('input[name="nc_bc"]:checked')?.value;
+    if(bcVal==='pm'&&g('nc_pm_fn')){const pfn2=g('nc_pm_fn'),pln2=g('nc_pm_ln');contacts.push({id:'b_'+Date.now(),name:pfn2+' '+pln2,initials:((pfn2[0]||'')+(pln2[0]||'')).toUpperCase(),color:avC[2],email:g('nc_pm_em'),phone:g('nc_pm_ph'),title:'',role:'billing',billingTo:true,pmRef:pfn2+' '+pln2,jobs:[]});}
+    else if(bcVal==='primary')contacts.push({id:'b_'+Date.now(),name:fn+' '+ln,initials:init,color:avC[2],email:g('nc_email'),phone:g('nc_phone'),title:'',role:'billing',billingTo:true,pmRef:fn+' '+ln,jobs:[]});
+    else if(bcVal==='other'&&g('nc_bc_em'))contacts.push({id:'b_'+Date.now(),name:g('nc_bc_fn')+' '+g('nc_bc_ln'),initials:((g('nc_bc_fn')[0]||'')+(g('nc_bc_ln')[0]||'')).toUpperCase(),color:avC[2],email:g('nc_bc_em'),phone:g('nc_bc_ph'),title:g('nc_bc_ti'),role:'billing',billingTo:true,pmRef:'',jobs:[]});
+    _ncCC.forEach((cc,i)=>contacts.push({id:'b_'+Date.now()+i,name:cc.fn+' '+cc.ln,initials:((cc.fn[0]||'')+(cc.ln[0]||'')).toUpperCase(),color:avC[i%avC.length],email:cc.em,phone:cc.ph,title:'',role:'billing',billingTo:false,billingCc:true,pmRef:'',jobs:[]}));
   }
-
-  // Extra CC billing contacts
-  _bpExtraContacts.forEach((ec,i)=>{
-    const einit=((ec.fn[0]||'')+(ec.ln[0]||'')).toUpperCase();
-    const pmRef = sameYes&&pm ? pm.name : (el('bp_fname').value.trim()+' '+el('bp_lname').value.trim()).trim();
-    c.contacts.push({
-      id:'b_'+Date.now()+i, name:ec.fn+' '+ec.ln, initials:einit,
-      color:avColors[(2+i)%avColors.length], email:ec.em, phone:ec.ph||'',
-      title:'', role:'billing', billingTo:false, billingCc:true,
-      pmRef, jobs:[]
-    });
-  });
-
-  closeBillingPopup();
-  renderDetail(_bpNewId);
-  renderList();
-
-  const flash=document.createElement('div');
-  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
-  flash.textContent='✓ Billing information saved';
-  document.body.appendChild(flash);
-  setTimeout(()=>flash.remove(),3000);
+  const siY=document.getElementById('nc_si_yes')?.checked;
+  CUSTOMERS.unshift({id:newId,name:g('nc_company'),city:g('nc_city')+', '+(g('nc_state')||'CA'),address:addr,phone:g('nc_phone'),since:g('nc_since')||''+new Date().getFullYear(),type:typeVal,waiver:g('nc_waiver')||'conditional',portal:g('nc_bmethod')==='Client portal',notes:'',specialInstructions:!incomplete&&siY,specialInstructionsText:!incomplete&&siY?g('nc_si_text'):'',billingMethod:g('nc_bmethod')||'direct-email',sov:false,sovEstimates:[],incomplete:!!incomplete,contacts});
+  closeModal();activeId=newId;renderList();renderDetail(newId);
+  const fl=document.createElement('div');
+  fl.style.cssText='position:fixed;bottom:24px;right:24px;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);background:'+(incomplete?'var(--warning)':'var(--success)')+';';
+  fl.textContent=incomplete?'⚠ Customer saved — billing pending':'✓ Customer created successfully';
+  document.body.appendChild(fl);setTimeout(()=>fl.remove(),3500);
 }
+
+function ncSaveAll(){ncBuildAndSave(false);}
+function ncSaveLater(){ncBuildAndSave(true);}
+function saveCustomer(){ncSaveAll();}
 
 // ══ TYPE SELECTOR ══
 // ── ADD CONTACT MODAL ──
@@ -2476,18 +1884,18 @@ function closeTypeSel(){
 // ══ FILTERS ══
 function setFilter(f){
   activeFilter=f;
-  ['all','active','billing'].forEach(x=>{
-    document.getElementById('chip-'+x).classList.toggle('active',x===f);
+  ['all','active','billing','incomplete'].forEach(x=>{
+    const _ce=document.getElementById('chip-'+x);if(_ce)_ce.classList.toggle('active',x===f);
   });
   renderList();
 }
 
 // ══ SPECIAL INSTRUCTIONS TOGGLE ══
 function toggleFormSpecial(val){
-  document.getElementById('special_fields').style.display = val ? 'block' : 'none';
-  document.getElementById('waiver_std').style.display = val ? 'none' : 'block';
-  document.getElementById('si_yes_lbl').classList.toggle('sel', val);
-  document.getElementById('si_no_lbl').classList.toggle('sel', !val);
+  const sf=document.getElementById('special_fields');if(sf)sf.style.display=val?'block':'none';
+  const ws=document.getElementById('waiver_std');if(ws)ws.style.display=val?'none':'block';
+  const sy=document.getElementById('si_yes_lbl');if(sy)sy.classList.toggle('sel',val);
+  const sn=document.getElementById('si_no_lbl');if(sn)sn.classList.toggle('sel',!val);
 }
 
 // ══ TYPE RADIO HANDLER ══
@@ -2501,44 +1909,27 @@ function onTypeChange(){
 
 // ══ EVENT LISTENERS (set after DOM is ready) ══
 document.addEventListener('DOMContentLoaded', function(){
-  // Header button
-  document.getElementById('btnNewCustomer').addEventListener('click', openModal);
-  // Modal close buttons
-  document.getElementById('btnCloseModal').addEventListener('click', closeModal);
-  document.getElementById('btnCancelModal').addEventListener('click', closeModal);
-  // Save button
-  document.getElementById('btnSaveCustomer').addEventListener('click', saveCustomer);
-  // Add contact
-  const _btnAC = document.getElementById('btnAddContact'); if(_btnAC) _btnAC.addEventListener('click', addExtraContact);
-  // Close on bg click
-  document.getElementById('modalBg').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
-  // Search
-  document.getElementById('searchInput').addEventListener('input', renderList);
-  // Filters
-  document.getElementById('chip-all').addEventListener('click', ()=>setFilter('all'));
-  document.getElementById('chip-active').addEventListener('click', ()=>setFilter('active'));
-  document.getElementById('chip-billing').addEventListener('click', ()=>setFilter('billing'));
-  // Customer list clicks
-  document.getElementById('customerList').addEventListener('click', function(e){
-    const item = e.target.closest('.customer-item');
-    if(!item) return;
-    const id = parseInt(item.dataset.id);
-    activeId=id;
-    renderList();
-    renderDetail(id);
+  function on(id,ev,fn){const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);}
+  on('btnNewCustomer','click',openModal);
+  on('btnCloseModal','click',closeModal);
+  on('modalBg','click',function(e){if(e.target===this)closeModal();});
+  on('searchInput','input',renderList);
+  on('chip-all','click',()=>setFilter('all'));
+  on('chip-active','click',()=>setFilter('active'));
+  on('chip-billing','click',()=>setFilter('billing'));
+  on('chip-incomplete','click',()=>setFilter('incomplete'));
+  on('customerList','click',function(e){
+    const item=e.target.closest('.customer-item');if(!item)return;
+    const id=parseInt(item.dataset.id);activeId=id;renderList();renderDetail(id);
   });
-  // Type selector
-  document.getElementById('btnCloseTypeSel').addEventListener('click', closeTypeSel);
-  document.getElementById('typeSelectorBg').addEventListener('click', function(e){ if(e.target===this) closeTypeSel(); });
-  document.getElementById('btnGoNewEst').addEventListener('click', ()=>{ closeTypeSel(); window.location.href='/sdd-estimates.html'; });
-  document.getElementById('btnGoChangOrder').addEventListener('click', ()=>{ closeTypeSel(); window.location.href='/sdd-estimates.html'; });
-  // ESC key
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeTypeSel(); }});
-  // Init render
+  on('btnCloseTypeSel','click',closeTypeSel);
+  on('typeSelectorBg','click',function(e){if(e.target===this)closeTypeSel();});
+  on('btnGoNewEst','click',()=>{closeTypeSel();window.location.href='/sdd-estimates.html';});
+  on('btnGoChangOrder','click',()=>{closeTypeSel();window.location.href='/sdd-estimates.html';});
+  on('statPopupBg','click',function(e){if(e.target===this)closeStatPopup();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeTypeSel();closeStatPopup();}});
   renderList();
-  renderDetail(1);
-  activeId=1;
-  renderList();
+  if(CUSTOMERS.length){activeId=CUSTOMERS[0].id;renderDetail(CUSTOMERS[0].id);renderList();}
 });
 
 // ══ SOV FUNCTIONS ══
@@ -2862,7 +2253,77 @@ function exportSOVPdf(customerId){
   w.document.close();
 }
 
+
+
+function navigateFromStat(type, customerId){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const jobs = getAllJobs(c);
+  const pa = v=>parseFloat((v||'0').replace(/[$,]/g,'')||0);
+  const fmtAmt = n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+  const STAT_CONFIGS = {
+    estimates:{ title:'Approved — Pending Scheduling', color:'var(--info)', bg:'rgba(58,126,212,.1)',
+      items: jobs.filter(j=>j.status==='Pending scheduled'),
+      navUrl:'/sdd-estimates.html', navLabel:'View in Estimates →', emptyMsg:'No approved estimates pending scheduling.' },
+    active:{ title:'Active Jobs', color:'var(--warning)', bg:'rgba(200,130,42,.1)',
+      items: jobs.filter(j=>j.status==='In progress'),
+      navUrl:'/sdd-jobs.html', navLabel:'View in Jobs →', emptyMsg:'No active jobs.' },
+    billing:{ title:'Ready to Bill', color:'var(--danger)', bg:'rgba(217,79,79,.1)',
+      items: jobs.filter(j=>j.status==='Ready to bill'),
+      navUrl:'/sdd-jobs.html', navLabel:'View in Jobs →', emptyMsg:'No jobs ready to bill.' },
+    ar:{ title:'Accounts Receivable', color:'var(--success)', bg:'rgba(58,158,106,.1)',
+      items: jobs.filter(j=>j.status==='Completed'),
+      navUrl:'/sdd-invoices.html', navLabel:'View in Invoices →', emptyMsg:'No open invoices.' },
+    pastdue:{ title:'Total Past Due', color:'var(--danger)', bg:'rgba(217,79,79,.1)',
+      items: jobs.filter(j=>j.status==='Completed').slice(0,Math.max(0,jobs.filter(j=>j.status==='Completed').length-1)),
+      navUrl:'/sdd-invoices.html', navLabel:'View in Invoices →', emptyMsg:'No past due invoices.' }
+  };
+
+  const cfg = STAT_CONFIGS[type];
+  if(!cfg) return;
+  const totalAmt = cfg.items.reduce((s,j)=>s+pa(j.amount),0);
+  document.getElementById('spTitle').textContent = cfg.title;
+  document.getElementById('spTitle').style.color = cfg.color;
+  document.getElementById('spSummary').textContent =
+    cfg.items.length+' item'+(cfg.items.length!==1?'s':'')+
+    (totalAmt>0?' · '+fmtAmt(totalAmt):'');
+  document.getElementById('spBody').innerHTML = cfg.items.length===0
+    ? '<div style="padding:24px 20px;text-align:center;color:var(--muted2);font-size:14px;">'+cfg.emptyMsg+'</div>'
+    : cfg.items.map(j=>`<div class="sp-row" onclick="goToEstimate('`+`${j.est}')">
+        <div class="sp-icon" style="background:`+`${cfg.bg};"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="`+`${cfg.color}" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="sp-info"><div class="sp-name">`+`${j.est} — `+`${j.address}</div><div class="sp-meta">`+`${j.date}</div></div>
+        <div class="sp-right"><div class="sp-amt" style="color:`+`${cfg.color};">`+`${j.amount}</div></div>
+      </div>`).join('');
+  document.getElementById('spFootNote').textContent = 'Total: '+fmtAmt(totalAmt);
+  const btn = document.getElementById('spNavBtn');
+  btn.textContent = cfg.navLabel;
+  btn.onclick = ()=>{ closeStatPopup(); window.location.href=cfg.navUrl; };
+  document.getElementById('statPopupBg').classList.add('open');
+}
+
+// ── DOCUMENT FUNCTIONS ──
+
+
 </script>
+
+<!-- ══ STAT DETAIL POPUP ══ -->
+<div class="stat-popup-bg" id="statPopupBg">
+  <div class="stat-popup">
+    <div class="stat-popup-head">
+      <div>
+        <div class="stat-popup-title" id="spTitle"></div>
+        <div class="stat-popup-summary" id="spSummary"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeStatPopup()">✕</button>
+    </div>
+    <div class="stat-popup-body" id="spBody"></div>
+    <div class="stat-popup-foot">
+      <div style="font-size:12px;color:var(--muted);" id="spFootNote"></div>
+      <button class="btn btn-ghost btn-sm" id="spNavBtn" onclick="closeStatPopup()">Go to module →</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MOBILE NAV ══ -->
 <nav class="mobile-nav">
@@ -2892,352 +2353,153 @@ function exportSOVPdf(customerId){
   </a>
 </nav>
 
-
-<!-- ══ BILLING INFO POPUP ══ -->
-<div id="billingPopupBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;">
-  <div style="background:var(--surface);border-radius:16px;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto;">
-
-    <!-- Head -->
-    <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;">Billing information</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="bpCustomerName"></div>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="closeBillingPopup()">✕ Skip</button>
-    </div>
-
-    <!-- Body -->
-    <div style="padding:22px 24px;max-height:75vh;overflow-y:auto;">
-
-      <!-- Q1: Is primary contact same as billing? -->
-      <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;">Is the primary contact the same as the billing contact?</div>
-        <div style="display:flex;gap:10px;">
-          <label id="bp_same_yes_lbl" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;padding:11px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
-            <input type="radio" name="bp_same" value="yes" id="bp_same_yes" onchange="bpToggleSame(true)" style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer;">
-            ✓ Yes — same as primary contact
-          </label>
-          <label id="bp_same_no_lbl" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;padding:11px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
-            <input type="radio" name="bp_same" value="no" id="bp_same_no" onchange="bpToggleSame(false)" style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer;">
-            No — different billing contact
-          </label>
-        </div>
-
-        <!-- Different billing contact fields -->
-        <div id="bp_diff_fields" style="display:none;margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Billing contact</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="ff"><label>First name <span style="color:var(--danger);">*</span></label><input type="text" id="bp_fname" placeholder="First name"></div>
-            <div class="ff"><label>Last name <span style="color:var(--danger);">*</span></label><input type="text" id="bp_lname" placeholder="Last name"></div>
-            <div class="ff"><label>Email <span style="color:var(--danger);">*</span></label><input type="email" id="bp_email" placeholder="billing@company.com"></div>
-            <div class="ff"><label>Phone</label><input type="tel" id="bp_phone" placeholder="(619) 555-0000"></div>
-            <div class="ff" style="grid-column:span 2;"><label>Title / Position</label><input type="text" id="bp_title" placeholder="e.g. Billing Manager"></div>
-          </div>
-        </div>
-
-        <!-- Extra billing contacts -->
-        <div id="bp_extra_contacts_wrap" style="margin-top:14px;">
-          <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;">Additional billing contacts (CC):</div>
-          <div id="bp_extra_list"></div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;">Add billing contact</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-              <input type="text" id="bpe_fname" placeholder="First name" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
-              <input type="text" id="bpe_lname" placeholder="Last name" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
-              <input type="email" id="bpe_email" placeholder="Email address" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
-              <input type="tel" id="bpe_phone" placeholder="Phone (optional)" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
-            </div>
-            <button type="button" onclick="bpAddExtraContact()" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(184,146,42,.08);color:var(--gold);cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add billing contact
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Billing preferences -->
-      <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;">Billing preferences</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="ff">
-            <label>Conditional waiver</label>
-            <select id="bp_waiver">
-              <option value="conditional">Conditional waiver</option>
-              <option value="unconditional">Unconditional waiver</option>
-              <option value="none">No waiver required</option>
-            </select>
-          </div>
-          <div class="ff">
-            <label>Payment terms</label>
-            <select id="bp_terms">
-              <option value="Net 30">Net 30</option>
-              <option value="Net 15">Net 15</option>
-              <option value="Net 45">Net 45</option>
-              <option value="Due on completion">Due on completion</option>
-              <option value="50% deposit">50% deposit required</option>
-            </select>
-          </div>
-          <div class="ff">
-            <label>Customer since</label>
-            <input type="number" id="bp_since" value="2026" min="2000" max="2100" placeholder="2026">
-          </div>
-          <div class="ff">
-            <label>Billing method</label>
-            <select id="bp_billing_method">
-              <option value="Direct email">Direct email</option>
-              <option value="Client portal">Client portal</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Special instructions -->
-      <div>
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;">Special instructions</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;">Are special instructions required?</div>
-        <div style="display:flex;gap:10px;margin-bottom:12px;">
-          <label id="bp_si_yes_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);font-weight:500;transition:all .15s;">
-            <input type="radio" name="bp_si" value="yes" id="bp_si_yes" onchange="bpToggleSI(true)" style="accent-color:var(--gold);width:15px;height:15px;"> Yes
-          </label>
-          <label id="bp_si_no_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);font-weight:500;transition:all .15s;">
-            <input type="radio" name="bp_si" value="no" id="bp_si_no" onchange="bpToggleSI(false)" style="accent-color:var(--gold);width:15px;height:15px;"> No
-          </label>
-        </div>
-        <div id="bp_si_text_wrap" style="display:none;">
-          <textarea id="bp_si_text" rows="3" placeholder="Enter special billing instructions for this client..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:12px 14px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;resize:vertical;transition:border .15s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border2)'"></textarea>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Footer -->
-    <div style="padding:14px 24px;border-top:1px solid var(--border);background:var(--surface2);border-radius:0 0 16px 16px;display:flex;justify-content:space-between;align-items:center;">
-      <button class="btn btn-ghost btn-sm" onclick="closeBillingPopup()">Skip for now</button>
-      <button class="btn btn-gold" onclick="saveBillingPopup()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        Save billing info
-      </button>
-    </div>
-  </div>
-</div>
-</body<div id="modalBg" class="modal-bg">
-  <div class="modal-box" style="max-width:680px;">
-
-    <!-- STEP INDICATOR -->
-    <div class="modal-head" style="flex-direction:column;align-items:stretch;gap:12px;">
+</body>
+</html><div id="modalBg" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" style="max-width:660px;">
+    <div class="modal-head" style="flex-direction:column;align-items:stretch;gap:10px;padding-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="modal-title" id="ncModalTitle">New customer</div>
-        <button class="btn btn-ghost btn-sm" id="btnCloseModal">✕ Cancel</button>
+        <div class="modal-title" id="ncTitle">New customer</div>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕ Cancel</button>
       </div>
-      <div style="display:flex;gap:0;">
-        <div id="step_ind_1" style="flex:1;height:4px;background:var(--gold);border-radius:4px 0 0 4px;"></div>
-        <div id="step_ind_2" style="flex:1;height:4px;background:var(--border2);margin:0 2px;"></div>
-        <div id="step_ind_3" style="flex:1;height:4px;background:var(--border2);border-radius:0 4px 4px 0;"></div>
+      <div style="display:flex;gap:3px;">
+        <div id="ncBar1" style="flex:1;height:4px;border-radius:4px;background:var(--gold);"></div>
+        <div id="ncBar2" style="flex:1;height:4px;border-radius:4px;background:var(--border2);"></div>
+        <div id="ncBar3" style="flex:1;height:4px;border-radius:4px;background:var(--border2);"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">
-        <span id="step_lbl_1" style="color:var(--gold);">1. Company</span>
-        <span id="step_lbl_2">2. Job</span>
-        <span id="step_lbl_3">3. Billing</span>
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">
+        <span id="ncLbl1" style="color:var(--gold);">1. Company</span>
+        <span id="ncLbl2" style="color:var(--muted2);">2. Job</span>
+        <span id="ncLbl3" style="color:var(--muted2);">3. Billing</span>
       </div>
     </div>
 
-    <!-- ── STEP 1: Company + Primary Contact + Address ── -->
+    <!-- STEP 1: Company -->
     <div id="ncStep1" class="modal-body">
       <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>Company information</div>
-        <div class="ff">
-          <label>Company / Customer name <span class="req">*</span></label>
-          <input type="text" id="f_company" placeholder="e.g. ABC Construction Corp">
-          <div class="ferr" id="e_company">Required</div>
-        </div>
-        <div class="ff" style="margin-bottom:0;">
-          <label>Customer type <span class="req">*</span></label>
-          <div style="display:flex;gap:16px;margin-top:10px;">
-            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 18px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;" id="lbl_commercial">
-              <input type="radio" name="customer_type" id="f_commercial" value="commercial" style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;" onchange="onTypeChange()"> 🏢 Commercial
+        <div class="fsec-title">Company information</div>
+        <div class="ff"><label>Company / customer name <span class="req">*</span></label><input type="text" id="nc_company" placeholder="e.g. ABC Construction Corp"><div class="ferr" id="e_nc_company">Required</div></div>
+        <div class="ff" style="margin-bottom:0;"><label>Customer type <span class="req">*</span></label>
+          <div style="display:flex;gap:12px;margin-top:8px;">
+            <label id="nc_lbl_comm" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
+              <input type="radio" name="nc_type" value="commercial" id="nc_commercial" onchange="ncTypeChange()" style="accent-color:var(--gold);width:16px;height:16px;"> 🏢 Commercial
             </label>
-            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 18px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;" id="lbl_residential">
-              <input type="radio" name="customer_type" id="f_residential" value="residential" style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;" onchange="onTypeChange()"> 🏠 Residential
+            <label id="nc_lbl_res" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
+              <input type="radio" name="nc_type" value="residential" id="nc_residential" onchange="ncTypeChange()" style="accent-color:var(--gold);width:16px;height:16px;"> 🏠 Residential
             </label>
           </div>
-          <div class="ferr" id="e_type" style="margin-top:6px;">Please select a customer type</div>
+          <div class="ferr" id="e_nc_type" style="margin-top:6px;">Please select a type</div>
         </div>
       </div>
-
       <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Primary contact</div>
+        <div class="fsec-title">Primary contact</div>
         <div class="fg2">
-          <div class="ff"><label>First name <span class="req">*</span></label><input type="text" id="f_fname" placeholder="Maria"><div class="ferr" id="e_fname">Required</div></div>
-          <div class="ff"><label>Last name <span class="req">*</span></label><input type="text" id="f_lname" placeholder="Rodriguez"><div class="ferr" id="e_lname">Required</div></div>
-          <div class="ff"><label>Phone number <span class="req">*</span></label><input type="tel" id="f_phone" placeholder="(619) 555-0000"><div class="ferr" id="e_phone">Required</div></div>
-          <div class="ff"><label>Email address <span class="req">*</span></label><input type="email" id="f_email" placeholder="contact@company.com"><div class="ferr" id="e_email">Required</div></div>
+          <div class="ff"><label>First name <span class="req">*</span></label><input type="text" id="nc_fname" placeholder="Maria"><div class="ferr" id="e_nc_fname">Required</div></div>
+          <div class="ff"><label>Last name <span class="req">*</span></label><input type="text" id="nc_lname" placeholder="Rodriguez"><div class="ferr" id="e_nc_lname">Required</div></div>
+          <div class="ff"><label>Phone <span class="req">*</span></label><input type="tel" id="nc_phone" placeholder="(619) 555-0000"><div class="ferr" id="e_nc_phone">Required</div></div>
+          <div class="ff"><label>Email <span class="req">*</span></label><input type="email" id="nc_email" placeholder="contact@company.com"><div class="ferr" id="e_nc_email">Required</div></div>
         </div>
       </div>
-
       <div class="fsec" style="margin-bottom:0;padding-bottom:0;border:none;">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Physical address</div>
-        <div class="addr-box">
-          <div class="addr-label"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Street address</div>
-          <div class="fg3">
-            <div class="ff"><label>Street number <span class="req">*</span></label><input type="text" id="f_snum" placeholder="1420"><div class="ferr" id="e_snum">Required</div></div>
-            <div class="ff" style="flex:2;"><label>Street name <span class="req">*</span></label><input type="text" id="f_sname" placeholder="Harbor"><div class="ferr" id="e_sname">Required</div></div>
-            <div class="ff"><label>Type <span class="req">*</span></label>
-              <select id="f_stype"><option value="">Select...</option><option>Ave</option><option>Blvd</option><option>Cir</option><option>Ct</option><option>Dr</option><option>Ln</option><option>Pkwy</option><option>Pl</option><option>Rd</option><option>St</option><option>Way</option></select>
-              <div class="ferr" id="e_stype">Required</div>
-            </div>
+        <div class="fsec-title">Physical address</div>
+        <div class="fg2">
+          <div class="ff"><label>Street number <span class="req">*</span></label><input type="text" id="nc_snum" placeholder="4500"><div class="ferr" id="e_nc_snum">Required</div></div>
+          <div class="ff"><label>Street name <span class="req">*</span></label><input type="text" id="nc_sname" placeholder="Main"><div class="ferr" id="e_nc_sname">Required</div></div>
+          <div class="ff"><label>Type <span class="req">*</span></label>
+            <select id="nc_stype"><option value="">Select...</option><option>Ave</option><option>Blvd</option><option>Cir</option><option>Ct</option><option>Dr</option><option>Hwy</option><option>Ln</option><option>Pkwy</option><option>Pl</option><option>Rd</option><option>St</option><option>Way</option></select>
+            <div class="ferr" id="e_nc_stype">Required</div>
           </div>
-          <div class="fg2" style="margin-top:10px;">
-            <div class="ff"><label>Unit type <span style="font-weight:400;color:var(--muted2);">(if applicable)</span></label>
-              <select id="f_utype"><option value="">None</option><option>Suite</option><option>Apt</option><option>Unit</option><option>Floor</option></select>
-            </div>
-            <div class="ff"><label>Unit number <span style="font-weight:400;color:var(--muted2);">(if applicable)</span></label><input type="text" id="f_unum" placeholder="e.g. 200, A"></div>
-          </div>
-        </div>
-        <div class="fg3" style="margin-top:10px;">
-          <div class="ff" style="flex:2;"><label>City <span class="req">*</span></label><input type="text" id="f_city" placeholder="San Diego"><div class="ferr" id="e_city">Required</div></div>
-          <div class="ff"><label>State <span class="req">*</span></label>
-            <select id="f_state"><option value="">—</option><option selected>CA</option><option>AZ</option><option>NV</option><option>OR</option><option>WA</option><option>TX</option><option>FL</option><option>NY</option></select>
-            <div class="ferr" id="e_state">Required</div>
-          </div>
-          <div class="ff"><label>ZIP <span class="req">*</span></label><input type="text" id="f_zip" placeholder="92101" maxlength="10"><div class="ferr" id="e_zip">Required</div></div>
+          <div class="ff"><label>City <span class="req">*</span></label><input type="text" id="nc_city" placeholder="San Diego"><div class="ferr" id="e_nc_city">Required</div></div>
+          <div class="ff"><label>State</label><select id="nc_state"><option>CA</option><option>AZ</option><option>NV</option><option>TX</option><option>FL</option><option>NY</option><option>OR</option><option>WA</option></select></div>
+          <div class="ff"><label>ZIP <span class="req">*</span></label><input type="text" id="nc_zip" placeholder="92101" maxlength="10"><div class="ferr" id="e_nc_zip">Required</div></div>
         </div>
       </div>
     </div>
 
-    <!-- ── STEP 2: Job + Project Manager ── -->
+    <!-- STEP 2: Job -->
     <div id="ncStep2" class="modal-body" style="display:none;">
-      <div style="background:rgba(184,146,42,.06);border:1px solid rgba(184,146,42,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--muted);">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Optional — you can add jobs later from the customer profile.
-      </div>
-
+      <div style="background:rgba(184,146,42,.07);border:1px solid rgba(184,146,42,.2);border-radius:10px;padding:11px 15px;margin-bottom:16px;font-size:13px;color:var(--muted);">Optional — you can add jobs later from the customer profile.</div>
       <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>First job (optional)</div>
+        <div class="fsec-title">First job (optional)</div>
         <div class="fg2">
-          <div class="ff"><label>PO Number</label><input type="text" id="j_po" placeholder="e.g. PO-4891"></div>
-          <div class="ff"><label>Job name</label><input type="text" id="j_name" placeholder="e.g. Harbor Blvd Demo Phase 1"></div>
+          <div class="ff"><label>PO Number</label><input type="text" id="nc_po" placeholder="e.g. PO-4891"></div>
+          <div class="ff"><label>Job name</label><input type="text" id="nc_jobname" placeholder="e.g. Harbor Blvd Demo Phase 1"></div>
         </div>
-        <div class="ff">
-          <label>Job site address</label>
-          <input type="text" id="j_addr" placeholder="e.g. 1420 Harbor Blvd, San Diego CA 92101">
-        </div>
+        <div class="ff"><label>Job site address</label><input type="text" id="nc_jobaddr" placeholder="e.g. 1420 Harbor Blvd, San Diego CA 92101"></div>
       </div>
-
       <div class="fsec" style="margin-bottom:0;padding-bottom:0;border:none;">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Project Manager for this job (optional)</div>
+        <div class="fsec-title">Project Manager for this job (optional)</div>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
           <div class="fg2">
-            <div class="ff"><label>First name</label><input type="text" id="pm_fname" placeholder="James"></div>
-            <div class="ff"><label>Last name</label><input type="text" id="pm_lname" placeholder="Torres"></div>
-            <div class="ff"><label>Phone</label><input type="tel" id="pm_phone" placeholder="(619) 555-0000"></div>
-            <div class="ff"><label>Email</label><input type="email" id="pm_email" placeholder="j.torres@company.com"></div>
+            <div class="ff"><label>First name</label><input type="text" id="nc_pm_fn" placeholder="James"></div>
+            <div class="ff"><label>Last name</label><input type="text" id="nc_pm_ln" placeholder="Torres"></div>
+            <div class="ff"><label>Phone</label><input type="tel" id="nc_pm_ph" placeholder="(619) 555-0000"></div>
+            <div class="ff" style="margin-bottom:0;"><label>Email</label><input type="email" id="nc_pm_em" placeholder="j.torres@company.com"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ── STEP 3: Billing Info ── -->
+    <!-- STEP 3: Billing -->
     <div id="ncStep3" class="modal-body" style="display:none;">
-      <div style="background:rgba(184,146,42,.06);border:1px solid rgba(184,146,42,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--muted);">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Optional — you can update billing info later from the customer profile.
-      </div>
-
-      <!-- Billing contact same as PM or primary? -->
+      <div style="background:rgba(184,146,42,.07);border:1px solid rgba(184,146,42,.2);border-radius:10px;padding:11px 15px;margin-bottom:16px;font-size:13px;color:var(--muted);">Optional — you can update billing info later.</div>
       <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Billing contact</div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Is the billing contact the same as:</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 16px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;" id="bc_same_pm_lbl">
-            <input type="radio" name="bc_same" value="pm" id="bc_same_pm" onchange="ncBillSameChange('pm')" style="accent-color:var(--gold);width:15px;height:15px;"> Project Manager
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 16px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;" id="bc_same_primary_lbl">
-            <input type="radio" name="bc_same" value="primary" id="bc_same_primary" onchange="ncBillSameChange('primary')" style="accent-color:var(--gold);width:15px;height:15px;"> Primary contact
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 16px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;" id="bc_same_other_lbl">
-            <input type="radio" name="bc_same" value="other" id="bc_same_other" onchange="ncBillSameChange('other')" style="accent-color:var(--gold);width:15px;height:15px;"> Different contact
-          </label>
+        <div class="fsec-title">Billing contact (TO)</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:10px;">Is the billing contact the same as:</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+          <label id="nc_bc_pm_lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;"><input type="radio" name="nc_bc" value="pm" id="nc_bc_pm" onchange="ncBillSame('pm')" style="accent-color:var(--gold);width:15px;height:15px;"> Project Manager</label>
+          <label id="nc_bc_pri_lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;"><input type="radio" name="nc_bc" value="primary" id="nc_bc_pri" onchange="ncBillSame('primary')" style="accent-color:var(--gold);width:15px;height:15px;"> Primary contact</label>
+          <label id="nc_bc_oth_lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;"><input type="radio" name="nc_bc" value="other" id="nc_bc_oth" onchange="ncBillSame('other')" style="accent-color:var(--gold);width:15px;height:15px;"> Different contact</label>
         </div>
-        <!-- Different billing contact fields -->
-        <div id="bc_other_fields" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+        <div id="nc_bc_other" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
           <div class="fg2">
-            <div class="ff"><label>First name <span class="req">*</span></label><input type="text" id="bc_fname" placeholder="First name"></div>
-            <div class="ff"><label>Last name <span class="req">*</span></label><input type="text" id="bc_lname" placeholder="Last name"></div>
-            <div class="ff"><label>Email <span class="req">*</span></label><input type="email" id="bc_email" placeholder="billing@company.com"></div>
-            <div class="ff"><label>Phone</label><input type="tel" id="bc_phone" placeholder="(619) 555-0000"></div>
-            <div class="ff" style="grid-column:span 2;"><label>Title</label><input type="text" id="bc_title" placeholder="Billing Manager"></div>
+            <div class="ff"><label>First name</label><input type="text" id="nc_bc_fn" placeholder="First name"></div>
+            <div class="ff"><label>Last name</label><input type="text" id="nc_bc_ln" placeholder="Last name"></div>
+            <div class="ff"><label>Email</label><input type="email" id="nc_bc_em" placeholder="billing@company.com"></div>
+            <div class="ff"><label>Phone</label><input type="tel" id="nc_bc_ph" placeholder="(619) 555-0000"></div>
+            <div class="ff" style="grid-column:span 2;"><label>Title</label><input type="text" id="nc_bc_ti" placeholder="Billing Manager"></div>
           </div>
         </div>
-        <!-- Extra CC billing contacts -->
-        <div style="margin-top:4px;">
-          <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;">Additional billing contacts (CC):</div>
-          <div id="nc_extra_bill_list"></div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Additional billing contacts (CC)</div>
+          <div id="nc_cc_list"></div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
             <div class="fg2" style="margin-bottom:8px;">
-              <input type="text" id="nceb_fname" placeholder="First name" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
-              <input type="text" id="nceb_lname" placeholder="Last name" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
-              <input type="email" id="nceb_email" placeholder="Email" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
-              <input type="tel" id="nceb_phone" placeholder="Phone (optional)" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+              <input type="text" id="nc_cc_fn" placeholder="First name" style="background:#fff;border:1.5px solid var(--border2);border-radius:7px;padding:8px 11px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+              <input type="text" id="nc_cc_ln" placeholder="Last name" style="background:#fff;border:1.5px solid var(--border2);border-radius:7px;padding:8px 11px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+              <input type="email" id="nc_cc_em" placeholder="Email" style="background:#fff;border:1.5px solid var(--border2);border-radius:7px;padding:8px 11px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+              <input type="tel" id="nc_cc_ph" placeholder="Phone" style="background:#fff;border:1.5px solid var(--border2);border-radius:7px;padding:8px 11px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
             </div>
-            <button type="button" onclick="ncAddExtraBill()" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(184,146,42,.08);color:var(--gold);cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>+ Add billing contact
-            </button>
+            <button type="button" onclick="ncAddCC()" style="font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(184,146,42,.08);color:var(--gold);cursor:pointer;font-family:'Barlow',sans-serif;">+ Add billing contact</button>
           </div>
         </div>
       </div>
-
-      <!-- Billing preferences (company level) -->
       <div class="fsec">
-        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Company billing settings</div>
+        <div class="fsec-title">Company billing settings</div>
         <div class="fg2">
-          <div class="ff">
-            <label>Conditional waiver</label>
-            <select id="nc_waiver"><option value="conditional">Conditional waiver</option><option value="unconditional">Unconditional waiver</option><option value="none">No waiver required</option></select>
-          </div>
-          <div class="ff">
-            <label>Payment terms</label>
-            <select id="nc_terms"><option value="Net 30">Net 30</option><option value="Net 15">Net 15</option><option value="Net 45">Net 45</option><option value="Due on completion">Due on completion</option></select>
-          </div>
-          <div class="ff">
-            <label>Customer since</label>
-            <input type="number" id="nc_since" value="2026" min="2000" max="2100">
-          </div>
-          <div class="ff">
-            <label>Billing method</label>
-            <select id="nc_billing"><option>Direct email</option><option>Client portal</option></select>
-          </div>
+          <div class="ff"><label>Conditional waiver</label><select id="nc_waiver"><option value="conditional">Conditional waiver</option><option value="unconditional">Unconditional waiver</option><option value="none">No waiver required</option></select></div>
+          <div class="ff"><label>Payment terms</label><select id="nc_terms"><option value="Net 30">Net 30</option><option value="Net 15">Net 15</option><option value="Net 45">Net 45</option><option value="Due on completion">Due on completion</option></select></div>
+          <div class="ff"><label>Customer since</label><input type="number" id="nc_since" value="2026" min="2000" max="2100"></div>
+          <div class="ff"><label>Billing method</label><select id="nc_bmethod"><option>Direct email</option><option>Client portal</option></select></div>
         </div>
       </div>
-
-      <!-- Special instructions -->
-      <div class="fsec" style="margin-bottom:0;padding-bottom:0;border:none;">
+      <div class="fsec" style="border:none;padding-bottom:0;margin-bottom:0;">
         <div class="fsec-title">Special instructions</div>
-        <div style="display:flex;gap:10px;margin-bottom:12px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;" id="nc_si_yes_lbl">
-            <input type="radio" name="nc_si" value="yes" id="nc_si_yes" onchange="ncSIToggle(true)" style="accent-color:var(--gold);width:15px;height:15px;"> Yes
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;" id="nc_si_no_lbl">
-            <input type="radio" name="nc_si" value="no" id="nc_si_no" onchange="ncSIToggle(false)" style="accent-color:var(--gold);width:15px;height:15px;"> No
-          </label>
+        <div style="display:flex;gap:10px;margin-bottom:10px;">
+          <label id="nc_si_y_lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;padding:8px 18px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;"><input type="radio" name="nc_si" value="yes" id="nc_si_yes" onchange="ncSIToggle(true)" style="accent-color:var(--gold);width:15px;height:15px;"> Yes</label>
+          <label id="nc_si_n_lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;padding:8px 18px;border:1.5px solid var(--border2);border-radius:8px;font-weight:500;transition:all .15s;"><input type="radio" name="nc_si" value="no" id="nc_si_no" onchange="ncSIToggle(false)" style="accent-color:var(--gold);width:15px;height:15px;"> No</label>
         </div>
-        <div id="nc_si_wrap" style="display:none;">
-          <textarea id="nc_si_text" rows="3" placeholder="Special billing instructions for this client..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:12px;font-family:'Barlow',sans-serif;font-size:14px;outline:none;resize:vertical;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border2)'"></textarea>
-        </div>
+        <div id="nc_si_wrap" style="display:none;"><textarea id="nc_si_text" rows="3" placeholder="Special billing instructions..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:10px 12px;font-family:'Barlow',sans-serif;font-size:14px;outline:none;resize:vertical;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border2)'"></textarea></div>
       </div>
     </div>
 
-    <!-- FOOTER -->
     <div class="modal-foot">
-      <div style="font-size:11px;color:var(--muted);">Fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" id="ncBtnBack" style="display:none;" onclick="ncGoBack()">← Back</button>
-        <button class="btn btn-ghost btn-sm" id="ncBtnSkip" style="display:none;" onclick="ncSkipStep()">Skip</button>
-        <button class="btn btn-gold" id="ncBtnNext" onclick="ncNextStep()">
-          Continue → <span id="ncBtnNextLabel">Job info</span>
-        </button>
+      <div style="font-size:11px;color:var(--muted);">Fields marked <span class="req">*</span> are required</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-ghost btn-sm" id="ncBtnBack" style="display:none;" onclick="ncBack()">← Back</button>
+        <button class="btn btn-ghost btn-sm" id="ncBtnSkip" style="display:none;" onclick="ncSkip()">Skip</button>
+        <button class="btn btn-ghost btn-sm" id="ncBtnLater" style="display:none;" onclick="ncSaveLater()">Save &amp; complete later</button>
+        <button class="btn btn-gold" id="ncBtnNext" onclick="ncNext()">Continue → Job info</button>
       </div>
     </div>
   </div>
 </div>
-
->
