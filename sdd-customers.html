@@ -1,0 +1,2919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDD — Customers</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#B8922A;--gold-light:#C9A84C;--gold-dim:rgba(184,146,42,0.12);--gold-dim2:rgba(184,146,42,0.07);
+  --black:#1A1A1A;--surface:#FFFFFF;--surface2:#F5F4F1;--surface3:#ECEAE5;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#1A1A1A;--muted:#777;--muted2:#AAA;
+  --danger:#D94F4F;--success:#3A9E6A;--warning:#C8822A;--info:#3A7ED4;
+}
+body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-svg .s-bar{fill:var(--gold);}.logo-svg .letters{fill:#1A1A1A;}
+.logo-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+.nav{display:flex;gap:4px;}
+.nav-item{padding:7px 16px;border-radius:6px;font-size:15px;color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;text-decoration:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);}
+.nav-item svg{width:15px;height:15px;opacity:.7;}
+.btn{padding:8px 18px;border-radius:6px;font-size:15px;font-family:'Barlow',sans-serif;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-gold{background:var(--gold);color:#fff;font-weight:600;}
+.btn-gold:hover{background:var(--gold-light);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);}
+.btn-sm{padding:6px 14px;font-size:13px;}
+/* LAYOUT */
+.app{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px);}
+/* LEFT */
+.panel-left{width:300px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-left-header{padding:16px;border-bottom:1px solid var(--border);}
+.search-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;flex:1;}
+.search-box input::placeholder{color:var(--muted2);}
+.filter-row{display:flex;gap:6px;}
+.filter-chip{padding:5px 12px;border-radius:20px;font-size:13px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;}
+.filter-chip.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.customer-list{overflow-y:auto;flex:1;}
+.customer-list::-webkit-scrollbar{width:4px;}
+.customer-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px;}
+.customer-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:all .15s;}
+.customer-item:hover{background:var(--surface2);}
+.customer-item.active{background:var(--gold-dim2);border-left:2px solid var(--gold);}
+.ci-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
+.ci-name{font-weight:600;font-size:16px;color:var(--text);}
+.ci-badge{font-size:12px;padding:2px 7px;border-radius:20px;background:var(--surface3);color:var(--muted);}
+.ci-badge.active{background:rgba(58,158,106,.12);color:var(--success);}
+.ci-city{font-size:14px;color:var(--muted);margin-bottom:4px;}
+.ci-total{font-size:14px;color:var(--gold);font-weight:600;}
+/* RIGHT */
+.panel-right{flex:1;overflow-y:auto;background:#F0EEE9;}
+.panel-right::-webkit-scrollbar{width:6px;}
+.panel-right::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+.empty-state{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);}
+.empty-state svg{width:40px;height:40px;opacity:.25;}
+/* DETAIL */
+.detail-wrap{padding:24px 28px;}
+.card{background:var(--surface);border-radius:12px;padding:20px 22px;margin-bottom:16px;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid var(--border);margin-bottom:0;}
+.stat-box{padding:14px 18px;border-right:1px solid var(--border);cursor:pointer;transition:background .15s;position:relative;}
+.stat-box:last-child{border-right:none;}
+.stat-box:hover{background:var(--surface2);}
+.stat-box:hover::after{content:'→';position:absolute;bottom:8px;right:10px;font-size:11px;color:var(--muted2);}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);margin-bottom:5px;}
+.stat-val{font-size:20px;font-weight:700;color:var(--text);}
+.stat-sub{font-size:12px;font-weight:600;margin-top:3px;}
+/* JOB CARDS */
+.jobs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.job-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s;border-left:3px solid var(--gold);}
+.job-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06);}
+.jc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.jc-est{font-size:13px;font-weight:700;color:var(--muted);}
+.jc-address{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.jc-contact{font-size:11px;color:var(--muted);}
+.jc-bottom{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.jc-amt{font-size:15px;font-weight:600;color:var(--gold);}
+.jc-date{font-size:13px;color:var(--muted2);}
+.sp{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;}
+.sp-pending{background:rgba(58,126,212,.12);color:var(--info);}
+.sp-progress{background:rgba(200,130,42,.12);color:var(--warning);}
+.sp-completed{background:rgba(58,158,106,.12);color:var(--success);}
+.sp-scheduled{background:rgba(184,146,42,.12);color:var(--gold);}
+.sp-billing{background:rgba(217,79,79,.12);color:var(--danger);}
+/* CONTACTS */
+.contact-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.cc-header{padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s;}
+.cc-header:hover{background:var(--surface2);}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Barlow Condensed',sans-serif;}
+.av-gold{background:rgba(184,146,42,.15);color:var(--gold);border:1px solid rgba(184,146,42,.3);}
+.av-info{background:rgba(58,126,212,.12);color:var(--info);border:1px solid rgba(58,126,212,.25);}
+.av-success{background:rgba(58,158,106,.12);color:var(--success);border:1px solid rgba(58,158,106,.25);}
+.av-warning{background:rgba(200,130,42,.12);color:var(--warning);border:1px solid rgba(200,130,42,.25);}
+.av-muted{background:var(--surface3);color:var(--muted);border:1px solid var(--border2);}
+.cc-info{flex:1;}
+.cc-name{font-size:16px;font-weight:600;}
+.cc-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+.cc-right{text-align:right;font-size:11px;color:var(--muted);}
+.cc-jobs-wrap{border-top:1px solid var(--border);}
+.cc-job-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:all .15s;}
+.cc-job-row:hover{background:var(--surface2);padding-left:20px;}
+.cc-job-row:last-child{border-bottom:none;}
+.ccj-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ccj-info{flex:1;}
+.ccj-street{font-size:15px;font-weight:500;}
+.ccj-city{font-size:13px;color:var(--muted);margin-top:1px;}
+.ccj-right{text-align:right;}
+.ccj-amt{font-size:14px;font-weight:600;color:var(--gold);}
+.ccj-date{font-size:10px;color:var(--muted2);}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:400;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:16px;width:100%;max-width:660px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal-head{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;}
+.modal-body{padding:22px 24px;max-height:calc(100vh - 180px);overflow-y:auto;}
+.modal-body::-webkit-scrollbar{width:4px;}
+.modal-body::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px;}
+.modal-foot{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:0 0 16px 16px;}
+/* FORM */
+.fsec{margin-bottom:22px;}
+.fsec-title{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.ff{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.ff label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;}
+.req{color:var(--danger);margin-left:1px;}
+.opt-tag{font-size:9px;font-weight:400;color:var(--muted2);text-transform:none;letter-spacing:0;margin-left:4px;}
+.ff input,.ff select,.ff textarea{background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:11px 14px;font-family:'Barlow',sans-serif;font-size:15px;color:var(--text);outline:none;transition:border .15s;width:100%;}
+.ff input:focus,.ff select:focus,.ff textarea:focus{border-color:var(--gold);background:#fff;}
+.ff input.err,.ff select.err{border-color:var(--danger);background:rgba(217,79,79,.04);}
+.ferr{font-size:13px;color:var(--danger);margin-top:3px;display:none;}
+.ferr.show{display:block;}
+.ff textarea{resize:vertical;min-height:80px;}
+.addr-box{background:rgba(184,146,42,.06);border:1px solid rgba(184,146,42,.2);border-radius:10px;padding:14px 16px;}
+.addr-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.extra-contact{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;position:relative;}
+.ec-remove{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted2);cursor:pointer;font-size:20px;padding:0 4px;border-radius:4px;}
+.ec-remove:hover{color:var(--danger);}
+.add-contact-btn{background:none;border:1.5px dashed var(--border2);border-radius:8px;padding:9px;width:100%;font-family:'Barlow',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;margin-top:4px;}
+.add-contact-btn:hover{border-color:var(--gold);color:var(--gold);}
+/* TYPE SELECTOR POPUP */
+.type-sel-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.type-sel-bg.open{display:flex;}
+.type-card{display:flex;align-items:center;gap:16px;padding:18px 20px;border:1.5px solid var(--border2);border-radius:12px;cursor:pointer;transition:all .15s;margin-bottom:12px;}
+.type-card:last-child{margin-bottom:0;}
+.type-card:hover{border-color:var(--gold);background:rgba(184,146,42,.04);}
+.type-card.co:hover{border-color:var(--warning);background:rgba(200,130,42,.04);}
+svg{display:block;}
+
+/* ── SOV ── */
+.sov-toggle-row{display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.sov-toggle-label{font-size:14px;font-weight:600;color:var(--text);}
+.sov-toggle-sub{font-size:12px;color:var(--muted);}
+.toggle-sw{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle-sw input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--surface3);border-radius:24px;cursor:pointer;transition:background .2s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.toggle-sw input:checked + .toggle-slider{background:var(--gold);}
+.toggle-sw input:checked + .toggle-slider:before{transform:translateX(20px);}
+.sov-section{margin-bottom:20px;}
+.sov-section-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.sov-table{width:100%;border-collapse:collapse;font-size:13px;}
+.sov-table th{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--border);text-align:left;background:var(--surface2);}
+.sov-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.sov-table tr:last-child td{border-bottom:none;}
+.sov-table .num{text-align:right;font-weight:600;}
+.sov-table .status-paid{color:var(--success);font-weight:700;}
+.sov-table .status-open{color:var(--warning);font-weight:700;}
+.sov-table .status-pending{color:var(--info);font-weight:700;}
+.sov-totals{background:var(--surface2);border-radius:0 0 10px 10px;padding:12px 10px;}
+.sov-tot-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--muted);}
+.sov-tot-row.grand{font-size:15px;font-weight:700;color:var(--text);padding-top:8px;margin-top:6px;border-top:2px solid var(--border2);}
+.sov-tot-row.highlight{color:var(--danger);font-weight:700;}
+/* SOV PDF */
+.sov-pdf-page{background:#fff;width:100%;padding:0;}
+
+
+/* ── STAT DETAIL POPUP ── */
+.stat-popup-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;align-items:flex-end;justify-content:flex-end;padding:20px;}
+.stat-popup-bg.open{display:flex;}
+.stat-popup{background:var(--surface);border-radius:14px;width:480px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.2);overflow:hidden;}
+.stat-popup-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.stat-popup-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;}
+.stat-popup-summary{font-size:12px;color:var(--muted);margin-top:2px;}
+.stat-popup-body{overflow-y:auto;flex:1;}
+.stat-popup-body::-webkit-scrollbar{width:4px;}
+.stat-popup-body::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px;}
+.sp-row{display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.sp-row:last-child{border-bottom:none;}
+.sp-row:hover{background:var(--surface2);}
+.sp-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sp-info{flex:1;}
+.sp-name{font-size:14px;font-weight:600;}
+.sp-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.sp-right{text-align:right;}
+.sp-amt{font-size:14px;font-weight:700;}
+.sp-status{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;margin-top:3px;display:inline-block;}
+.stat-popup-foot{padding:12px 20px;border-top:1px solid var(--border);background:var(--surface2);display:flex;justify-content:space-between;align-items:center;}
+
+
+/* ── DOCUMENTS TAB ── */
+.doc-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;margin-top:18px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.doc-section-title:first-child{margin-top:0;}
+.doc-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);}
+.doc-row:last-child{border-bottom:none;}
+.doc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.doc-icon.est{background:rgba(184,146,42,.1);}
+.doc-icon.inv{background:rgba(58,126,212,.1);}
+.doc-icon.co{background:rgba(200,130,42,.12);}
+.doc-icon.upload{background:rgba(58,158,106,.1);}
+.doc-info{flex:1;}
+.doc-name{font-size:14px;font-weight:600;color:var(--text);}
+.doc-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.doc-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.doc-badge.est{background:rgba(184,146,42,.12);color:var(--gold);}
+.doc-badge.inv{background:rgba(58,126,212,.1);color:var(--info);}
+.doc-badge.co{background:rgba(200,130,42,.12);color:var(--warning);}
+.doc-badge.other{background:var(--surface3);color:var(--muted);}
+.doc-actions{display:flex;gap:6px;align-items:center;}
+.doc-download-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Barlow',sans-serif;}
+.doc-download-btn:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:24px 20px;text-align:center;cursor:pointer;transition:all .15s;margin-top:4px;}
+.upload-zone:hover{border-color:var(--gold);background:var(--gold-dim2);}
+.upload-zone input[type=file]{display:none;}
+
+
+/* ── CONTACT TABS ── */
+.tab-bar{display:flex;border-bottom:2px solid var(--border);margin-bottom:16px;}
+.tab-btn{padding:10px 18px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:var(--surface3);color:var(--muted);}
+.tab-btn.active .tab-badge{background:var(--gold-dim);color:var(--gold);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* BILLING OPTIONS */
+.special-toggle{display:flex;gap:20px;margin-top:8px;}
+.special-radio{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;}
+.special-radio:hover{border-color:var(--gold);}
+.special-radio input[type=radio]{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;}
+.special-radio.sel{border-color:var(--gold);background:var(--gold-dim2);}
+.billing-detail-box{background:rgba(184,146,42,.06);border:1px solid rgba(184,146,42,.2);border-radius:10px;padding:16px;margin-top:12px;}
+.contact-simple{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.contact-simple:last-child{border-bottom:none;}
+.cs-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.cs-info{flex:1;}
+.cs-name{font-size:14px;font-weight:600;}
+.cs-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+
+/* ── RESPONSIVE — MOBILE ── */
+@media (max-width: 768px){
+  .header{padding:0 14px;height:52px;}
+  .nav{display:none;}
+  .logo-text{display:none;}
+  .app{flex-direction:column;height:auto;overflow:visible;}
+  .panel-left{width:100%;height:auto;border-right:none;border-bottom:1px solid var(--border);max-height:none;}
+  .panel-right{height:auto;overflow:visible;}
+  .customer-list{max-height:280px;}
+  .stats-row{grid-template-columns:1fr 1fr;overflow-x:auto;}
+  .jobs-grid{grid-template-columns:1fr;}
+  .detail-wrap{padding:14px 16px;}
+  .fg2{grid-template-columns:1fr;}
+  .fg3{grid-template-columns:1fr 1fr;}
+  .modal-bg{padding:0;align-items:flex-end;}
+  .modal-box{border-radius:16px 16px 0 0;max-width:100%;max-height:92vh;}
+  .modal-body{max-height:calc(92vh - 140px);}
+  .type-sel-bg{align-items:flex-end;padding:0;}
+  .type-sel-bg > div{border-radius:16px 16px 0 0;width:100%;max-width:100%;}
+  .cc-header{padding:12px 14px;}
+  .cc-job-row{padding:10px 14px;flex-wrap:wrap;gap:8px;}
+  .ccj-right{margin-left:auto;}
+}
+
+/* ── TABLET ── */
+@media (min-width:769px) and (max-width:1024px){
+  .panel-left{width:260px;}
+  .jobs-grid{grid-template-columns:1fr 1fr;}
+  .stats-row{grid-template-columns:repeat(3,1fr);}
+  .fg3{grid-template-columns:1fr 1fr;}
+}
+
+/* ── MOBILE NAV BAR ── */
+@media (max-width:768px){
+  .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:8px 0 12px;}
+  .mobile-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--muted);text-decoration:none;padding:4px 0;}
+  .mobile-nav a.active{color:var(--gold);}
+  .mobile-nav svg{width:22px;height:22px;}
+  body{padding-bottom:72px;}
+}
+@media (min-width:769px){
+  .mobile-nav{display:none;}
+}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <svg class="logo-svg" viewBox="0 0 120 60" width="56" height="28">
+      <polygon class="s-bar" points="28,8 58,8 42,52 12,52"/>
+      <text x="4" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">S</text>
+      <text x="44" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">DD</text>
+    </svg>
+    <span class="logo-text">Demolition</span>
+  </div>
+  <nav class="nav">
+    <a class="nav-item" href="/index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a class="nav-item active" href="/sdd-customers.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Customers</a>
+    <a class="nav-item" href="/sdd-estimates.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Estimates</a>
+    <a class="nav-item" href="/sdd-jobs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jobs</a>
+    <a class="nav-item" href="/sdd-invoices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Invoices</a>
+    <a class="nav-item" href="/sdd-vendors.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Vendors</a>
+  </nav>
+  <button class="btn btn-gold" id="btnNewCustomer">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New customer
+  </button>
+</div>
+
+<div class="app">
+  <div class="panel-left">
+    <div class="panel-left-header">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;color:var(--muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Search customers, contacts...">
+      </div>
+      <div class="filter-row">
+        <div class="filter-chip active" id="chip-all">All</div>
+        <div class="filter-chip" id="chip-active">Active</div>
+        <div class="filter-chip" id="chip-billing">Billing due</div>
+      </div>
+    </div>
+    <div class="customer-list" id="customerList"></div>
+  </div>
+  <div class="panel-right" id="panelRight">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <span>Select a customer to view details</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NEW CUSTOMER MODAL ══ -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title">New customer</div>
+      <button class="btn btn-ghost btn-sm" id="btnCloseModal">✕ Cancel</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="fsec">
+        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>Company information</div>
+        <div class="ff">
+          <label>Company / Customer name <span class="req">*</span></label>
+          <input type="text" id="f_company" placeholder="e.g. ABC Construction Corp">
+          <div class="ferr" id="e_company">Required</div>
+        </div>
+        <div class="ff" style="margin-bottom:0;">
+          <label>Customer type <span class="req">*</span></label>
+          <div style="display:flex;gap:24px;margin-top:10px;">
+            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 18px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;" id="lbl_commercial"
+              onmouseover="this.style.borderColor='var(--gold)'" onmouseout="if(!document.getElementById('f_commercial').checked)this.style.borderColor='var(--border2)'">
+              <input type="radio" name="customer_type" id="f_commercial" value="commercial"
+                style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;"
+                onchange="onTypeChange()">
+              🏢 Commercial
+            </label>
+            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 18px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;" id="lbl_residential"
+              onmouseover="this.style.borderColor='var(--gold)'" onmouseout="if(!document.getElementById('f_residential').checked)this.style.borderColor='var(--border2)'">
+              <input type="radio" name="customer_type" id="f_residential" value="residential"
+                style="width:17px;height:17px;accent-color:var(--gold);cursor:pointer;"
+                onchange="onTypeChange()">
+              🏠 Residential
+            </label>
+          </div>
+          <div class="ferr" id="e_type" style="margin-top:6px;">Please select a customer type</div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Primary contact</div>
+        <div class="fg2">
+          <div class="ff">
+            <label>First name <span class="req">*</span></label>
+            <input type="text" id="f_fname" placeholder="Maria">
+            <div class="ferr" id="e_fname">Required</div>
+          </div>
+          <div class="ff">
+            <label>Last name <span class="req">*</span></label>
+            <input type="text" id="f_lname" placeholder="Rodriguez">
+            <div class="ferr" id="e_lname">Required</div>
+          </div>
+          <div class="ff">
+            <label>Phone number <span class="req">*</span></label>
+            <input type="tel" id="f_phone" placeholder="(619) 555-0000">
+            <div class="ferr" id="e_phone">Required</div>
+          </div>
+          <div class="ff">
+            <label>Email address <span class="req">*</span></label>
+            <input type="email" id="f_email" placeholder="contact@company.com">
+            <div class="ferr" id="e_email">Required</div>
+          </div>
+          <div class="ff">
+            <label>Title / position</label>
+            <input type="text" id="f_title" placeholder="Project Manager">
+          </div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Physical address</div>
+        <div class="addr-box">
+          <div class="addr-lbl"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Street address</div>
+          <div class="fg3" style="margin-bottom:10px;">
+            <div class="ff">
+              <label>Street number <span class="req">*</span></label>
+              <input type="text" id="f_snum" placeholder="1420">
+              <div class="ferr" id="e_snum">Required</div>
+            </div>
+            <div class="ff">
+              <label>Street name <span class="req">*</span></label>
+              <input type="text" id="f_sname" placeholder="Harbor">
+              <div class="ferr" id="e_sname">Required</div>
+            </div>
+            <div class="ff">
+              <label>Street type <span class="req">*</span></label>
+              <select id="f_stype">
+                <option value="">Select…</option>
+                <option>Street</option><option>Avenue</option><option>Boulevard</option>
+                <option>Circle</option><option>Court</option><option>Drive</option>
+                <option>Lane</option><option>Place</option><option>Road</option>
+                <option>Trail</option><option>Way</option><option>Highway</option>
+                <option>Parkway</option><option>Terrace</option><option>Loop</option>
+              </select>
+              <div class="ferr" id="e_stype">Required</div>
+            </div>
+          </div>
+          <div class="fg2" style="margin-bottom:10px;">
+            <div class="ff">
+              <label>Unit type <span class="opt-tag">(if applicable)</span></label>
+              <select id="f_utype">
+                <option value="">None</option><option>Suite</option><option>Unit</option>
+                <option>Apartment</option><option>Number</option><option>Floor</option>
+              </select>
+            </div>
+            <div class="ff">
+              <label>Unit number <span class="opt-tag">(if applicable)</span></label>
+              <input type="text" id="f_unum" placeholder="e.g. 200, A">
+            </div>
+          </div>
+          <div class="fg3">
+            <div class="ff">
+              <label>City <span class="req">*</span></label>
+              <input type="text" id="f_city" placeholder="San Diego">
+              <div class="ferr" id="e_city">Required</div>
+            </div>
+            <div class="ff">
+              <label>State <span class="req">*</span></label>
+              <select id="f_state">
+                <option value="">Select…</option>
+                <option>AL</option><option>AK</option><option>AZ</option><option>AR</option>
+                <option selected>CA</option><option>CO</option><option>CT</option><option>DE</option>
+                <option>FL</option><option>GA</option><option>HI</option><option>ID</option>
+                <option>IL</option><option>IN</option><option>IA</option><option>KS</option>
+                <option>KY</option><option>LA</option><option>ME</option><option>MD</option>
+                <option>MA</option><option>MI</option><option>MN</option><option>MS</option>
+                <option>MO</option><option>MT</option><option>NE</option><option>NV</option>
+                <option>NH</option><option>NJ</option><option>NM</option><option>NY</option>
+                <option>NC</option><option>ND</option><option>OH</option><option>OK</option>
+                <option>OR</option><option>PA</option><option>RI</option><option>SC</option>
+                <option>SD</option><option>TN</option><option>TX</option><option>UT</option>
+                <option>VT</option><option>VA</option><option>WA</option><option>WV</option>
+                <option>WI</option><option>WY</option>
+              </select>
+              <div class="ferr" id="e_state">Required</div>
+            </div>
+            <div class="ff">
+              <label>ZIP code <span class="req">*</span></label>
+              <input type="text" id="f_zip" placeholder="92101" maxlength="10">
+              <div class="ferr" id="e_zip">Required</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    <div class="modal-foot">
+      <div style="font-size:11px;color:var(--muted);">Fields marked <span style="color:var(--danger);font-weight:700;">*</span> are required</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" id="btnCancelModal">Cancel</button>
+        <button class="btn btn-gold" id="btnSaveCustomer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Save customer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ ADD CONTACT MODAL ══ -->
+<div class="modal-bg" id="addContactModal" style="display:none;">
+  <div class="modal-box" style="max-width:580px;">
+    <div class="modal-head">
+      <div class="modal-title">Add contact</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddContactModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- CONTACT TYPE -->
+      <div class="ff" style="margin-bottom:16px;">
+        <label>Contact type <span class="req">*</span></label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+          <label class="ac-type-lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
+            <input type="radio" name="ac_type" value="project-manager" id="ac_pm" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" onchange="highlightACType()"> 👷 Project Manager
+          </label>
+
+          <label class="ac-type-lbl" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:14px;font-weight:500;padding:10px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
+            <input type="radio" name="ac_type" value="additional" id="ac_additional" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" onchange="highlightACType()"> 👤 Additional
+          </label>
+        </div>
+        <div class="ferr" id="e_ac_type">Please select a contact type</div>
+      </div>
+
+      <!-- CONTACT FIELDS -->
+      <div class="fg2">
+        <div class="ff">
+          <label>First name <span class="req">*</span></label>
+          <input type="text" id="ac_fname" placeholder="First name"
+            oninput="this.style.borderColor=this.value.trim()?'var(--border2)':'var(--danger)'"
+            onblur="reqAC('ac_fname','e_ac_fname')">
+          <div class="ferr" id="e_ac_fname">Required</div>
+        </div>
+        <div class="ff">
+          <label>Last name <span class="req">*</span></label>
+          <input type="text" id="ac_lname" placeholder="Last name"
+            oninput="this.style.borderColor=this.value.trim()?'var(--border2)':'var(--danger)'"
+            onblur="reqAC('ac_lname','e_ac_lname')">
+          <div class="ferr" id="e_ac_lname">Required</div>
+        </div>
+        <div class="ff">
+          <label>Phone number</label>
+          <input type="tel" id="ac_phone" placeholder="(619) 555-0000">
+        </div>
+        <div class="ff">
+          <label>Email address <span class="req">*</span></label>
+          <input type="email" id="ac_email" placeholder="email@company.com"
+            oninput="this.style.borderColor=this.value.trim()?'var(--border2)':'var(--danger)'"
+            onblur="reqAC('ac_email','e_ac_email')">
+          <div class="ferr" id="e_ac_email">Required</div>
+        </div>
+        <div class="ff" id="ac_title_wrap">
+          <label>Title / position <span id="ac_title_req" style="color:var(--muted2);font-weight:400;font-size:11px;">(optional)</span></label>
+          <input type="text" id="ac_title" placeholder="e.g. Site Supervisor">
+        </div>
+      </div>
+
+      <!-- BILLING SECTION — only visible when Project Manager selected -->
+      <div id="pm_billing_section" style="display:none;margin-top:20px;padding-top:18px;border-top:2px solid var(--border);">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <span id="pm_billing_section_title">Billing information</span>
+        </div>
+
+        <!-- Question -->
+        <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;">
+            Is the billing information the same as primary contact information?
+          </div>
+          <div style="display:flex;gap:10px;">
+            <label id="pm_bill_yes_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-weight:500;transition:all .15s;">
+              <input type="radio" name="pm_billing" value="yes" id="pm_bill_yes"
+                onchange="togglePMBillingSame(true)"
+                style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
+              ✓ Yes — add as billing contact
+            </label>
+            <label id="pm_bill_no_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-weight:500;transition:all .15s;">
+              <input type="radio" name="pm_billing" value="no" id="pm_bill_no"
+                onchange="togglePMBillingSame(false)"
+                style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
+              No
+            </label>
+          </div>
+        </div>
+
+        <!-- Additional billing contacts linked to this PM -->
+        <div id="pm_extra_billing_wrap">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="21" y1="11" x2="21" y2="17"/><line x1="18" y1="14" x2="24" y2="14"/></svg>
+            Additional billing contacts linked to this PM
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">These contacts will be included when sending estimates or invoices to this PM.</div>
+
+          <!-- Added billing contacts list -->
+          <div id="pm_extra_billing_list" style="margin-bottom:12px;"></div>
+
+          <!-- Add new billing contact form -->
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Add billing contact</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <input type="text" id="pb_fname" placeholder="First name *"
+                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
+              <input type="text" id="pb_lname" placeholder="Last name *"
+                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <input type="email" id="pb_email" placeholder="Email address *"
+                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
+              <input type="tel" id="pb_phone" placeholder="Phone (optional)"
+                style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;">
+            </div>
+            <button type="button" onclick="addExtraBillingContact()"
+              style="font-size:12px;font-weight:600;padding:8px 16px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(184,146,42,.08);color:var(--gold);cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add billing contact
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div style="font-size:11px;color:var(--muted);">Fields marked <span style="color:var(--danger);">*</span> required</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="closeAddContactModal()">Cancel</button>
+        <button class="btn btn-gold" onclick="saveAddContact()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Save contact
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ STAT DETAIL POPUP ══ -->
+<div class="stat-popup-bg" id="statPopupBg">
+  <div class="stat-popup">
+    <div class="stat-popup-head">
+      <div>
+        <div class="stat-popup-title" id="spTitle"></div>
+        <div class="stat-popup-summary" id="spSummary"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeStatPopup()">✕</button>
+    </div>
+    <div class="stat-popup-body" id="spBody"></div>
+    <div class="stat-popup-foot">
+      <div style="font-size:12px;color:var(--muted);" id="spFootNote"></div>
+      <button class="btn btn-ghost btn-sm" id="spNavBtn" onclick="closeStatPopup()">Go to module →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ESTIMATE TYPE SELECTOR ══ -->
+<div class="type-sel-bg" id="typeSelectorBg">
+  <div style="background:var(--surface);border-radius:16px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.2);">
+    <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">Create new</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="typeSelCustomerName"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnCloseTypeSel">✕</button>
+    </div>
+    <div style="padding:20px 24px;">
+      <div class="type-card" id="btnGoNewEst">
+        <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px;">New estimate</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;">Original estimate for a new job.</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="type-card co" id="btnGoChangOrder">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(200,130,42,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:3px;">Change order</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;">Linked to an existing estimate.</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+    <div style="padding:12px 24px;background:var(--surface2);border-top:1px solid var(--border);font-size:11px;color:var(--muted);">Change orders can only be linked to original estimates.</div>
+  </div>
+</div>
+
+<script>
+// ══ DATA ══
+const CUSTOMERS = [
+  {id:1, name:'ABC Construction Corp', city:'San Diego, CA',
+   address:'4500 Main St, San Diego CA 92103', phone:'(619) 555-0142',
+   since:'2023', type:'commercial', waiver:'conditional', portal:false, notes:'', specialInstructions:false, billingMethod:'direct-email', sov:true, sovEstimates:[],
+   contacts:[
+     {id:'c1', name:'Maria Rodriguez', initials:'MR', color:'av-info', role:'billing',
+      email:'billing@abcconstruction.com', phone:'(619) 555-0101', title:'Billing Manager', jobs:[]},
+     {id:'c2', name:'James Torres', initials:'JT', color:'av-gold', role:'project-manager',
+      email:'j.torres@abcconstruction.com', phone:'(619) 555-0102', title:'Project Manager',
+      jobs:[
+        {est:'EST-047', address:'1420 Harbor Blvd', city:'San Diego CA 92101', status:'In progress', amount:'$14,301', date:'May 2, 2026'},
+        {est:'EST-051', address:'880 5th Ave', city:'San Diego CA 92101', status:'Pending approval', amount:'$9,850', date:'May 8, 2026'},
+      ]},
+     {id:'c3', name:'Sandra Lee', initials:'SL', color:'av-warning', role:'project-manager',
+      email:'s.lee@abcconstruction.com', phone:'(619) 555-0103', title:'Site Supervisor',
+      jobs:[
+        {est:'EST-055', address:'342 Third Ave', city:'Chula Vista CA 91910', status:'Pending scheduled', amount:'$22,500', date:'Apr 28, 2026'},
+      ]},
+     {id:'c4', name:'Robert Park', initials:'RP', color:'av-success', role:'additional',
+      email:'r.park@abcconstruction.com', phone:'(619) 555-0104', title:'Director',
+      jobs:[
+        {est:'EST-060', address:'7700 Mission Valley Rd', city:'San Diego CA 92108', status:'Ready to bill', amount:'$31,200', date:'Apr 10, 2026'},
+      ]},
+   ]},
+  {id:2, name:'Horizon Builders LLC', city:'Chula Vista, CA',
+   address:'1200 Broadway, Chula Vista CA 91910', phone:'(619) 555-0200',
+   since:'2024', type:'commercial', waiver:'unconditional', portal:true, notes:'Portal billing only.', specialInstructions:false, billingMethod:'client-portal', sov:false, sovEstimates:[],
+   contacts:[
+     {id:'c5', name:'David Chen', initials:'DC', color:'av-gold', role:'project-manager',
+      email:'d.chen@horizonbuilders.com', phone:'(619) 555-0201', title:'Owner',
+      jobs:[
+        {est:'EST-038', address:'901 National City Blvd', city:'National City CA 91950', status:'Completed', amount:'$18,700', date:'Mar 15, 2026'},
+        {est:'EST-062', address:'450 Broadway', city:'Chula Vista CA 91910', status:'In progress', amount:'$11,400', date:'May 5, 2026'},
+      ]},
+     {id:'c6', name:'Priya Nair', initials:'PN', color:'av-info', role:'billing',
+      email:'billing@horizonbuilders.com', phone:'(619) 555-0202', title:'Billing', jobs:[]},
+   ]},
+  {id:3, name:'Pacific Coast Development', city:'Oceanside, CA',
+   address:'2800 Harbor Dr, Oceanside CA 92054', phone:'(760) 555-0310',
+   since:'2024', type:'commercial', waiver:'conditional', portal:false, notes:'', specialInstructions:false, billingMethod:'direct-email', sov:false, sovEstimates:[],
+   contacts:[
+     {id:'c7', name:'Tom Reyes', initials:'TR', color:'av-warning', role:'project-manager',
+      email:'t.reyes@paccoast.com', phone:'(760) 555-0311', title:'Project Manager',
+      jobs:[
+        {est:'EST-044', address:'510 Pier View Way', city:'Oceanside CA 92054', status:'Pending approval', amount:'$7,600', date:'May 6, 2026'},
+      ]},
+     {id:'c8', name:'Lisa Fontaine', initials:'LF', color:'av-info', role:'billing',
+      email:'accounts@paccoast.com', phone:'(760) 555-0312', title:'Accounts', jobs:[]},
+   ]},
+  {id:4, name:'Silverstone Group', city:'El Cajon, CA',
+   address:'955 Magnolia Ave, El Cajon CA 92020', phone:'(619) 555-0400',
+   since:'2025', type:'residential', waiver:'none', portal:false, notes:'', specialInstructions:false, billingMethod:'direct-email', sov:false, sovEstimates:[],
+   contacts:[
+     {id:'c9', name:'Marcus Webb', initials:'MW', color:'av-success', role:'project-manager',
+      email:'m.webb@silverstone.com', phone:'(619) 555-0401', title:'Owner',
+      jobs:[
+        {est:'EST-033', address:'1100 Magnolia Ave', city:'El Cajon CA 92020', status:'Completed', amount:'$5,200', date:'Feb 20, 2026'},
+      ]},
+   ]},
+];
+
+const STATUS_COLOR = {
+  'In progress':'var(--warning)',
+  'Completed':'var(--success)',
+  'Ready to bill':'var(--danger)',
+  'Pending approval':'var(--info)',
+  'Pending scheduled':'var(--gold)',
+};
+const STATUS_CLASS = {
+  'In progress':'sp-progress',
+  'Completed':'sp-completed',
+  'Ready to bill':'sp-billing',
+  'Pending approval':'sp-pending',
+  'Pending scheduled':'sp-scheduled',
+};
+
+let activeId = null;
+let activeFilter = 'all';
+let extraContactCount = 0;
+
+// ══ HELPERS ══
+
+// Customer estimates + change orders lookup for Documents tab
+const CUSTOMER_ESTIMATES = {
+  'ABC Construction Corp': [
+    {est:'EST-047',address:'1420 Harbor Blvd, San Diego',date:'May 2, 2026',amount:'$14,301',
+     cos:[]},
+    {est:'EST-051',address:'880 5th Ave, San Diego',date:'May 8, 2026',amount:'$9,850',
+     cos:[]},
+    {est:'EST-055',address:'342 Third Ave, Chula Vista',date:'Apr 28, 2026',amount:'$22,500',
+     cos:[]},
+    {est:'EST-060',address:'7700 Mission Valley Rd, San Diego',date:'Apr 10, 2026',amount:'$31,200',
+     cos:[]},
+    {est:'EST-070',address:'2200 Pacific Hwy, San Diego',date:'May 19, 2026',amount:'$18,500',
+     cos:[
+       {est:'EST-CO070-1',address:'2200 Pacific Hwy, San Diego',date:'May 20, 2026',
+        amount:'+$4,200',reason:'Scope addition — concrete cutting'}
+     ]},
+  ],
+  'Horizon Builders LLC': [
+    {est:'EST-038',address:'901 National City Blvd, National City',date:'Mar 15, 2026',amount:'$18,700',
+     cos:[]},
+    {est:'EST-080',address:'3800 Fifth Ave, Hillcrest',date:'May 20, 2026',amount:'$34,800',
+     cos:[
+       {est:'EST-CO080-1',address:'3800 Fifth Ave, Hillcrest',date:'May 21, 2026',
+        amount:'+$8,800',reason:'Scope addition — concrete cutting + hazmat abatement'}
+     ]},
+  ],
+  'Pacific Coast Development': [
+    {est:'EST-044',address:'510 Pier View Way, Oceanside',date:'May 6, 2026',amount:'$7,600',
+     cos:[]},
+  ],
+  'Silverstone Group': [
+    {est:'EST-044B',address:'1100 Magnolia Ave, El Cajon',date:'Feb 20, 2026',amount:'$5,200',
+     cos:[]},
+  ],
+};
+
+function getAllJobs(c){ return c.contacts.flatMap(ct=>ct.jobs.map(j=>({...j,contactName:ct.name,contactId:ct.id}))); }
+function parseMoney(v){ return parseFloat((v||'0').replace(/[$,]/g,'')||0); }
+
+function getTotals(c){
+  const jobs = getAllJobs(c);
+
+  const approvedEst = jobs.filter(j=>j.status==='Pending scheduled');
+  const approvedEstCount = approvedEst.length;
+  const approvedEstTotal = approvedEst.reduce((s,j)=>s+parseMoney(j.amount),0);
+
+  // Active jobs (in progress)
+  const activeJobs = jobs.filter(j=>j.status==='In progress');
+  const activeJobsCount = activeJobs.length;
+  const activeJobsTotal = activeJobs.reduce((s,j)=>s+parseMoney(j.amount),0);
+
+  // Ready to bill
+  const rtbJobs = jobs.filter(j=>j.status==='Ready to bill');
+  const rtbCount = rtbJobs.length;
+  const rtbTotal = rtbJobs.reduce((s,j)=>s+parseFloat(j.amount.replace(/[$,]/g,'')),0);
+
+  // Accounts Receivable (invoices sent, not yet paid — simulate from completed jobs)
+  const arJobs = jobs.filter(j=>j.status==='Completed');
+  const arCount = arJobs.length;
+  const arTotal = arJobs.reduce((s,j)=>s+parseFloat(j.amount.replace(/[$,]/g,'')),0);
+
+  // Past due (simulate: oldest completed jobs)
+  const pastDueJobs = arJobs.slice(0, Math.max(0, arJobs.length-1));
+  const pastDueCount = pastDueJobs.length;
+  const pastDueTotal = pastDueJobs.reduce((s,j)=>s+parseFloat(j.amount.replace(/[$,]/g,'')),0);
+
+  // Legacy
+  const total = jobs.reduce((s,j)=>s+parseFloat(j.amount.replace(/[$,]/g,'')),0);
+  const active = activeJobsCount;
+  const count = jobs.length;
+
+  return {
+    total, active, count,
+    approvedEstCount, approvedEstTotal,
+    activeJobsCount, activeJobsTotal,
+    rtbCount, rtbTotal,
+    arCount, arTotal,
+    pastDueCount, pastDueTotal
+  };
+}
+function fmt(n){return '$'+Number(n).toLocaleString();}
+function getQ(){ return document.getElementById('searchInput').value.toLowerCase(); }
+
+// ══ RENDER LIST ══
+function renderList(){
+  const q = getQ();
+  const list = document.getElementById('customerList');
+  const items = CUSTOMERS.filter(c=>{
+    const matchName = c.name.toLowerCase().includes(q);
+    const matchCity = c.city.toLowerCase().includes(q);
+    const matchContact = c.contacts.some(ct=>ct.name.toLowerCase().includes(q)||ct.email.toLowerCase().includes(q));
+    const match = !q || matchName || matchCity || matchContact;
+    if(!match) return false;
+    if(activeFilter==='active') return getAllJobs(c).some(j=>j.status==='In progress');
+    if(activeFilter==='billing') return getAllJobs(c).some(j=>j.status==='Ready to bill');
+    return true;
+  });
+  list.innerHTML = items.length ? items.map(c=>{
+    const t = getTotals(c);
+    return `<div class="customer-item${activeId===c.id?' active':''}" data-id="${c.id}">
+      <div class="ci-top">
+        <div class="ci-name">${c.name}</div>
+        <div class="ci-badge${t.active>0?' active':''}">${t.count} job${t.count!==1?'s':''}</div>
+      </div>
+      <div class="ci-city">${c.city}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;color:var(--muted);">${c.type==='residential'?'🏠 Residential':'🏢 Commercial'}</span>
+        <div class="ci-total">${fmt(t.total)}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="padding:20px 16px;color:var(--muted2);font-size:13px;text-align:center;">No customers found</div>';
+}
+
+// ══ RENDER DETAIL ══
+function renderDetail(id){
+  const c = CUSTOMERS.find(x=>x.id===id);
+  if(!c){ document.getElementById('panelRight').innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;opacity:.25;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Select a customer</span></div>'; return; }
+  const allJobs = getAllJobs(c);
+  const t = getTotals(c);
+  const billing = allJobs.filter(j=>j.status==='Ready to bill').length;
+
+  const jobCardsHTML = allJobs.length ? allJobs.map(j=>`
+    <div class="job-card" onclick="goToEstimate('${j.est}')">
+      <div class="jc-top">
+        <div class="jc-est">${j.est}</div>
+        <span class="sp ${STATUS_CLASS[j.status]||'sp-pending'}">${j.status}</span>
+      </div>
+      <div class="jc-address">${j.address}</div>
+      <div class="jc-contact">${j.contactName}</div>
+      <div class="jc-bottom">
+        <div class="jc-amt">${j.amount}</div>
+        <div class="jc-date">${j.date}</div>
+      </div>
+    </div>`).join('') : '<div style="color:var(--muted2);font-size:13px;font-style:italic;">No jobs yet</div>';
+
+  const contactCardsHTML = c.contacts.map(ct=>`
+    <div class="contact-card">
+      <div class="cc-header" onclick="toggleContact('${ct.id}')">
+        <div class="avatar ${ct.color}">${ct.initials}</div>
+        <div class="cc-info">
+          <div class="cc-name">${ct.name}</div>
+          <div class="cc-sub">${ct.title||''} ${ct.title&&ct.email?'·':''} ${ct.email}</div>
+        </div>
+        <div class="cc-right">
+          <div>${ct.jobs.length} job${ct.jobs.length!==1?'s':''}</div>
+          <div id="exp-${ct.id}" style="margin-top:2px;">${ct.jobs.length?'▾ show':''}</div>
+        </div>
+      </div>
+      <div id="jobs-${ct.id}" style="display:none;" class="cc-jobs-wrap">
+        ${ct.jobs.length ? ct.jobs.map(j=>`
+          <div class="cc-job-row" onclick="goToEstimate('${j.est}')">
+            <div class="ccj-dot" style="background:${STATUS_COLOR[j.status]||'var(--gold)'}"></div>
+            <div class="ccj-info">
+              <div class="ccj-street">${j.address}</div>
+              <div class="ccj-city">${j.city}</div>
+            </div>
+            <span class="sp ${STATUS_CLASS[j.status]||'sp-pending'}" style="flex-shrink:0;">${j.status}</span>
+            <div class="ccj-right">
+              <div class="ccj-amt">${j.amount}</div>
+              <div class="ccj-date">${j.date}</div>
+            </div>
+          </div>`).join('') : '<div style="padding:12px 16px;color:var(--muted2);font-size:13px;font-style:italic;">No jobs for this contact</div>'}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('panelRight').innerHTML = `
+  <div class="detail-wrap">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">${c.type==='residential'?'🏠 Residential':'🏢 Commercial'} · Since ${c.since}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;">${c.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;">
+            <span>📍 ${c.address}</span>
+            <span>📞 ${c.phone}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+          <button class="btn btn-ghost btn-sm">Edit</button>
+          <button class="btn btn-gold btn-sm" onclick="openTypeSel('${c.name.replace(/'/g,"\\'")}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New estimate
+          </button>
+        </div>
+      </div>
+      <div class="stats-row" style="grid-template-columns:repeat(5,1fr);">
+        <div class="stat-box" onclick="navigateFromStat('estimates','${c.id}')" style="cursor:pointer;" title="View approved estimates">
+          <div class="stat-label">Approved estimates</div>
+          <div class="stat-val" style="color:${t.approvedEstCount>0?'var(--info)':'var(--text)'};">${t.approvedEstCount}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:3px;color:${t.approvedEstTotal>0?'var(--info)':'var(--muted2)'};">${t.approvedEstTotal>0?fmt(t.approvedEstTotal):'—'}</div>
+        </div>
+        <div class="stat-box" onclick="navigateFromStat('active','${c.id}')" style="cursor:pointer;" title="View active jobs">
+          <div class="stat-label">Active jobs</div>
+          <div class="stat-val" style="color:${t.activeJobsCount>0?'var(--warning)':'var(--text)'};">${t.activeJobsCount}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:3px;color:${t.activeJobsTotal>0?'var(--warning)':'var(--muted2)'};">${t.activeJobsTotal>0?fmt(t.activeJobsTotal):'—'}</div>
+        </div>
+        <div class="stat-box" onclick="navigateFromStat('billing','${c.id}')" style="cursor:pointer;" title="View ready to bill">
+          <div class="stat-label">Ready to bill</div>
+          <div class="stat-val" style="color:${t.rtbCount>0?'var(--danger)':'var(--text)'};">${t.rtbCount}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:3px;color:${t.rtbCount>0?'var(--danger)':'var(--muted2)'};">${t.rtbTotal>0?fmt(t.rtbTotal):'—'}</div>
+        </div>
+        <div class="stat-box" onclick="navigateFromStat('ar','${c.id}')" style="cursor:pointer;" title="Accounts receivable">
+          <div class="stat-label">Accounts receivable</div>
+          <div class="stat-val" style="color:${t.arCount>0?'var(--success)':'var(--text)'};">${t.arCount}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:3px;color:${t.arCount>0?'var(--success)':'var(--muted2)'};">${t.arTotal>0?fmt(t.arTotal):'—'}</div>
+        </div>
+        <div class="stat-box" onclick="navigateFromStat('pastdue','${c.id}')" style="cursor:pointer;" title="Past due invoices">
+          <div class="stat-label">Total past due</div>
+          <div class="stat-val" style="color:${t.pastDueCount>0?'var(--danger)':'var(--text)'};">${t.pastDueCount}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:3px;color:${t.pastDueCount>0?'var(--danger)':'var(--muted2)'};">${t.pastDueTotal>0?fmt(t.pastDueTotal):'—'}</div>
+        </div>
+      </div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">All jobs — ${c.name}</div>
+      <div class="jobs-grid">${jobCardsHTML}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:0;">
+        Project managers &amp; contacts
+    
+      </div>
+
+      <!-- TABS -->
+      <div class="tab-bar" style="margin-top:16px;">
+        <button class="tab-btn active" onclick="showTab('pm','${c.id}',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Project managers
+          <span class="tab-badge">${c.contacts.filter(x=>x.role==='project-manager').length}</span>
+        </button>
+        <button class="tab-btn" onclick="showTab('billing','${c.id}',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Billing
+          <span class="tab-badge">${c.contacts.filter(x=>x.role==='billing').length}</span>
+        </button>
+        <button class="tab-btn" onclick="showTab('additional','${c.id}',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Additional contacts
+          <span class="tab-badge">${c.contacts.filter(x=>x.role==='additional').length}</span>
+        </button>
+
+        <button class="tab-btn" onclick="showTab('documents','${c.id}',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Documents
+        </button>
+        <button class="tab-btn" onclick="showTab('sov','${c.id}',this)" style="${c.sov?'':'color:var(--muted2);'}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+          SOV ${c.sov?'':'<span style="font-size:9px;padding:1px 5px;background:var(--surface3);border-radius:20px;color:var(--muted2);">Off</span>'}
+        </button>
+      </div>
+
+      <!-- TAB: PROJECT MANAGERS -->
+      <div class="tab-panel active" id="tab-pm-${c.id}">
+        <div style="display:flex;justify-content:flex-start;margin-bottom:12px;">
+          <button class="btn btn-ghost btn-sm" onclick="openAddContactModal(${c.id},'project-manager')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            + Add contact
+          </button>
+        </div>
+        ${c.contacts.filter(x=>x.role==='project-manager').length ? c.contacts.filter(x=>x.role==='project-manager').map(ct=>`
+        <div class="contact-card">
+          <div class="cc-header" onclick="toggleContact('${ct.id}')">
+            <div class="avatar ${ct.color}">${ct.initials}</div>
+            <div class="cc-info">
+              <div class="cc-name">${ct.name}</div>
+              <div class="cc-sub">${ct.title||''} ${ct.title&&ct.email?'·':''} ${ct.email} · ${ct.phone||''}</div>
+            </div>
+            <div class="cc-right" style="display:flex;align-items:center;gap:10px;">
+              <div style="text-align:right;">
+                <div>${ct.jobs.length} job${ct.jobs.length!==1?'s':''}</div>
+                <div id="exp-${ct.id}" style="margin-top:2px;font-size:11px;color:var(--muted);">${ct.jobs.length?'▾ show':''}</div>
+              </div>
+              <div style="display:flex;gap:6px;" onclick="event.stopPropagation()">
+                <button class="btn btn-ghost btn-sm" style="padding:5px 10px;font-size:12px;"
+                  onclick="openEditContact(${c.id},'${ct.id}')">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit
+                </button>
+                <button class="btn btn-ghost btn-sm" style="padding:5px 10px;font-size:12px;color:var(--danger);border-color:rgba(217,79,79,.25);"
+                  onclick="deleteContact(${c.id},'${ct.id}')">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="jobs-${ct.id}" style="display:none;" class="cc-jobs-wrap">
+            ${ct.jobs.length ? ct.jobs.map(j=>`
+              <div class="cc-job-row" onclick="goToEstimate('${j.est}')">
+                <div class="ccj-dot" style="background:${STATUS_COLOR[j.status]||'var(--gold)'}"></div>
+                <div class="ccj-info"><div class="ccj-street">${j.address}</div><div class="ccj-city">${j.city}</div></div>
+                <span class="sp ${STATUS_CLASS[j.status]||'sp-pending'}" style="flex-shrink:0;">${j.status}</span>
+                <div class="ccj-right"><div class="ccj-amt">${j.amount}</div><div class="ccj-date">${j.date}</div></div>
+              </div>`).join('') : '<div style="padding:12px 16px;color:var(--muted2);font-size:13px;">No jobs assigned</div>'}
+          </div>
+        </div>`).join('') : '<div style="padding:16px 0;color:var(--muted2);font-size:13px;font-style:italic;">No project managers assigned</div>'}
+      </div>
+
+      <!-- TAB: ADDITIONAL CONTACTS -->
+      <div class="tab-panel" id="tab-additional-${c.id}">
+        <div style="display:flex;justify-content:flex-start;margin-bottom:12px;">
+          <button class="btn btn-ghost btn-sm" onclick="openAddContactModal(${c.id},'additional')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            + Add contact
+          </button>
+        </div>
+        ${c.contacts.filter(ct=>ct.role==='additional').length
+          ? c.contacts.filter(ct=>ct.role==='additional').map(ct=>`
+            <div class="contact-simple" style="justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div class="cs-av ${ct.color}">${ct.initials}</div>
+                <div class="cs-info">
+                  <div class="cs-name">${ct.name}</div>
+                  <div class="cs-sub">${ct.title||''} · ${ct.email} · ${ct.phone||''}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;flex-shrink:0;">
+                <button class="btn btn-ghost btn-sm" style="padding:5px 10px;font-size:12px;"
+                  onclick="openEditContact(${c.id},'${ct.id}')">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit
+                </button>
+                <button class="btn btn-ghost btn-sm" style="padding:5px 10px;font-size:12px;color:var(--danger);border-color:rgba(217,79,79,.25);"
+                  onclick="deleteContact(${c.id},'${ct.id}')">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  Delete
+                </button>
+              </div>
+            </div>`).join('')
+          : '<div style="padding:16px 0;color:var(--muted2);font-size:13px;font-style:italic;">No additional contacts</div>'}
+      </div>
+
+      <!-- TAB: BILLING CONTACTS -->
+      <div class="tab-panel" id="tab-billing-${c.id}">
+
+        <!-- RECIPIENTS — hierarchical: PM as TO, linked billing contacts as CC -->
+        <div style="margin-bottom:24px;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Recipients — Estimates &amp; Invoices
+          </div>
+
+          ${(()=>{
+            const pms = c.contacts.filter(ct=>ct.role==='project-manager');
+            const billingAll = c.contacts.filter(ct=>ct.role==='billing');
+            if(!pms.length && !billingAll.length) return '<div style="padding:20px;text-align:center;color:var(--muted2);font-size:13px;font-style:italic;border:1px solid var(--border);border-radius:10px;">No billing contacts yet. Add a Project Manager and link billing contacts from the contact form.</div>';
+
+            return pms.map(pm=>{
+              const linked = billingAll.filter(bc=>bc.pmRef===pm.name);
+              return `<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
+                <!-- PM row — TO -->
+                <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 16px;background:var(--surface2);border-bottom:${linked.length?'1px solid var(--border)':'none'};">
+                  <div class="cs-av ${pm.color}" style="width:34px;height:34px;font-size:12px;flex-shrink:0;">${pm.initials}</div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;">${pm.name}</div>
+                    <div style="font-size:12px;color:var(--muted);">${pm.email}</div>
+                    <div style="font-size:11px;color:var(--muted2);">Project Manager</div>
+                  </div>
+                  <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(58,126,212,.1);color:var(--info);">TO</span>
+                </div>
+                <!-- Linked billing contacts — CC -->
+                ${linked.length ? linked.map(bc=>`
+                  <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 16px 10px 32px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.01);">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <div style="width:2px;height:30px;background:rgba(184,146,42,.25);border-radius:2px;flex-shrink:0;"></div>
+                      <div class="cs-av ${bc.color}" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">${bc.initials}</div>
+                    </div>
+                    <div>
+                      <div style="font-size:13px;font-weight:600;">${bc.name}</div>
+                      <div style="font-size:12px;color:var(--muted);">${bc.email}</div>
+                      ${bc.title?`<div style="font-size:11px;color:var(--muted2);">${bc.title}</div>`:''}
+                    </div>
+                    <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">CC</span>
+                  </div>`).join('')
+                  : '<div style="padding:10px 16px 10px 32px;font-size:12px;color:var(--muted2);font-style:italic;">No billing contacts linked — add from the PM form</div>'}
+              </div>`;
+            }).join('');
+          })()}
+
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;display:flex;gap:14px;">
+            <span><strong style="color:var(--info);">TO</strong> = Project Manager — primary recipient</span>
+            <span><strong style="color:var(--muted);">CC</strong> = Billing contacts — copied</span>
+          </div>
+        </div>
+
+        <!-- SPECIAL INSTRUCTIONS — at the bottom -->
+        <div style="border-top:1px solid var(--border);padding-top:18px;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Special instructions</div>
+          <div style="margin-bottom:14px;">
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;">Are special instructions required?</div>
+            <div style="display:flex;gap:10px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid ${c.specialInstructions?'var(--gold)':'var(--border2)'};background:${c.specialInstructions?'rgba(184,146,42,.06)':'var(--surface2)'};font-weight:${c.specialInstructions?'600':'400'};transition:all .15s;">
+                <input type="radio" name="si_req_${c.id}" value="yes" ${c.specialInstructions?'checked':''}
+                  onchange="toggleSIFromBilling(${c.id},true)"
+                  style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
+                Yes
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid ${!c.specialInstructions?'var(--gold)':'var(--border2)'};background:${!c.specialInstructions?'rgba(184,146,42,.06)':'var(--surface2)'};font-weight:${!c.specialInstructions?'600':'400'};transition:all .15s;">
+                <input type="radio" name="si_req_${c.id}" value="no" ${!c.specialInstructions?'checked':''}
+                  onchange="toggleSIFromBilling(${c.id},false)"
+                  style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
+                No
+              </label>
+            </div>
+          </div>
+          ${c.specialInstructions ? `
+          <div style="background:rgba(184,146,42,.06);border:1.5px solid rgba(184,146,42,.3);border-radius:10px;padding:14px 16px;">
+            <div style="font-size:11px;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Instructions <span style="color:var(--danger);">*</span></div>
+            <textarea id="si-text-${c.id}" rows="4"
+              style="width:100%;background:#fff;border:1.5px solid ${c.specialInstructionsText?'var(--border2)':'var(--danger)'};border-radius:8px;padding:12px 14px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);line-height:1.65;outline:none;resize:vertical;transition:border .15s;"
+              onfocus="this.style.borderColor='var(--gold)';"
+              onblur="this.style.borderColor=this.value?'var(--border2)':'var(--danger)';saveSpecialInstructions('${c.id}',this.value);"
+              placeholder="Enter special billing instructions for this client..."
+            >${c.specialInstructionsText||''}</textarea>
+            ${!c.specialInstructionsText?`<div style="font-size:11px;color:var(--danger);margin-top:4px;">⚠ Instructions are required when enabled</div>`:''}
+          </div>` : ''}
+        </div>
+
+      </div>
+
+      
+      <!-- TAB: DOCUMENTS -->
+      <div class="tab-panel" id="tab-documents-${c.id}">
+
+        <!-- ESTIMATES & CHANGE ORDERS -->
+        <div class="doc-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Estimates &amp; Change Orders
+        </div>
+        ${(()=>{
+          const ests = (CUSTOMER_ESTIMATES[c.name]||[]);
+          if(!ests.length) return '<div style="color:var(--muted2);font-size:13px;padding:10px 0;font-style:italic;">No estimates yet</div>';
+          return ests.map(j=>`
+            <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;">
+              <div class="doc-row" style="background:var(--surface);border-bottom:${j.cos&&j.cos.length?'1px solid var(--border)':'none'};">
+                <div class="doc-icon est"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <div class="doc-info">
+                  <div class="doc-name" style="font-weight:700;">${j.est} — ${j.address}</div>
+                  <div class="doc-meta">${j.date} · <span style="font-weight:600;">${j.amount}</span> · <span class="doc-badge est">Estimate</span>${j.cos&&j.cos.length?` &nbsp;<span style="font-size:11px;background:rgba(200,130,42,.12);color:var(--warning);padding:1px 8px;border-radius:20px;font-weight:700;">${j.cos.length} change order${j.cos.length>1?'s':''}</span>`:''}</div>
+                </div>
+                <div class="doc-actions">
+                  <button class="doc-download-btn" onclick="goToEstimate('${j.est}')" style="color:var(--info);border-color:rgba(58,126,212,.25);">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    View
+                  </button>
+                  <button class="doc-download-btn" onclick="downloadDoc('${j.est}','estimate','${c.name}')">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+              ${(j.cos||[]).map(co=>`
+              <div class="doc-row" style="background:rgba(200,130,42,.03);border-bottom:1px solid var(--border);">
+                <div style="display:flex;align-items:center;padding-left:20px;flex-shrink:0;gap:6px;">
+                  <div style="width:20px;height:1px;background:rgba(200,130,42,.4);flex-shrink:0;"></div>
+                  <div style="width:8px;height:8px;border-radius:50%;border:2px solid var(--warning);flex-shrink:0;"></div>
+                </div>
+                <div class="doc-icon co" style="background:rgba(200,130,42,.1);margin-left:6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </div>
+                <div class="doc-info">
+                  <div class="doc-name" style="font-size:13px;font-weight:700;color:var(--warning);">${co.est}</div>
+                  <div class="doc-meta">${co.date} · <span style="font-weight:600;color:var(--warning);">${co.amount}</span> · <span style="font-size:10px;background:rgba(200,130,42,.12);color:var(--warning);padding:1px 8px;border-radius:20px;font-weight:700;">Change Order</span> &nbsp;<span style="font-size:11px;color:var(--muted);">${co.reason||''}</span></div>
+                </div>
+                <div class="doc-actions">
+                  <button class="doc-download-btn" onclick="goToEstimate('${co.est}')" style="color:var(--warning);border-color:rgba(200,130,42,.3);">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    View
+                  </button>
+                  <button class="doc-download-btn" onclick="downloadDoc('${co.est}','co','${c.name}')">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download PDF
+                  </button>
+                </div>
+              </div>`).join('')}
+            </div>`).join('');
+        })()}
+
+        <!-- INVOICES -->
+        <div class="doc-section-title" style="margin-top:20px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Invoices
+        </div>
+        ${getAllJobs(c).filter(j=>j.status==='Completed'||j.status==='In progress').length
+          ? getAllJobs(c).filter(j=>j.status==='Completed'||j.status==='In progress').map(j=>`
+            <div class="doc-row">
+              <div class="doc-icon inv"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+              <div class="doc-info">
+                <div class="doc-name">INV-${j.est.replace('EST-','')} — ${j.address}</div>
+                <div class="doc-meta">${j.date} · ${j.amount} · <span class="doc-badge inv">Invoice</span> · <span style="font-size:11px;color:var(--muted);">EST ref: ${j.est}</span></div>
+              </div>
+              <div class="doc-actions">
+                <button class="doc-download-btn" onclick="goToEstimate('${j.est}')" style="color:var(--info);border-color:rgba(58,126,212,.25);">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  View
+                </button>
+                <button class="doc-download-btn" onclick="downloadDoc('INV-${j.est.replace('EST-','')}','invoice','${c.name}')">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download PDF
+                </button>
+              </div>
+            </div>`).join('')
+          : '<div style="color:var(--muted2);font-size:13px;padding:10px 0;font-style:italic;">No invoices yet</div>'}
+
+        <!-- UPLOADED DOCUMENTS -->
+        <div class="doc-section-title" style="margin-top:20px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Uploaded documents
+        </div>
+        ${(c.uploadedDocs||[]).length
+          ? (c.uploadedDocs||[]).map(d=>`
+            <div class="doc-row">
+              <div class="doc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div class="doc-info">
+                <div class="doc-name">${d.name}</div>
+                <div class="doc-meta">${d.date} · <span class="doc-badge" style="background:var(--surface3);color:var(--muted);">${d.category}</span></div>
+              </div>
+              <div class="doc-actions">
+                <button class="doc-download-btn" onclick="downloadDoc('${d.name}','uploaded','${c.name}')">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download
+                </button>
+              </div>
+            </div>`).join('')
+          : `<div style="border:2px dashed var(--border2);border-radius:10px;padding:20px;text-align:center;color:var(--muted2);font-size:13px;">
+              No uploaded documents yet
+              <div style="margin-top:8px;">
+                <input type="file" id="fileIn_${c.id}" style="display:none;" onchange="handleFileUpload(event,${c.id})">
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fileIn_${c.id}').click()">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload document
+                </button>
+              </div>
+            </div>`}
+        ${(c.uploadedDocs||[]).length ? `
+        <div style="margin-top:10px;">
+          <input type="file" id="fileIn_${c.id}" style="display:none;" onchange="handleFileUpload(event,${c.id})">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fileIn_${c.id}').click()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload another document
+          </button>
+        </div>` : ''}
+      </div>
+
+      <!-- TAB: SOV -->
+      <div class="tab-panel" id="tab-sov-${c.id}">
+        <div class="sov-toggle-row">
+          <label class="toggle-sw">
+            <input type="checkbox" ${c.sov?'checked':''} onchange="toggleSOV(${c.id},this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <div>
+            <div class="sov-toggle-label">Schedule of Values (SOV)</div>
+            <div class="sov-toggle-sub">Enable to track base estimates, change orders, invoices and retention for this client</div>
+          </div>
+          ${c.sov ? `<button class="btn btn-gold btn-sm" onclick="exportSOVPdf(${c.id})" style="margin-left:auto;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </button>` : ''}
+        </div>
+
+        ${c.sov ? `
+        ${buildSOVHtml(c)}
+        ` : `<div style="text-align:center;padding:32px 20px;color:var(--muted2);">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;opacity:.3;display:block;"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;">SOV not enabled for this client</div>
+          <div style="font-size:13px;">Toggle the switch above to enable Schedule of Values tracking</div>
+        </div>`}
+      </div>
+
+    </div>
+
+    ${c.notes?`<div class="card"><div class="card-title">Internal notes</div><div style="font-size:13px;color:var(--text);line-height:1.6;">${c.notes}</div></div>`:''}
+  </div>`;
+}
+
+function saveContactPref(customerId, contactIdx, docType, checked){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c || !c.contacts[contactIdx]) return;
+  const ct = c.contacts[contactIdx];
+  if(docType==='estimate') ct.receivesEstimates = checked;
+  if(docType==='invoice') ct.receivesInvoices = checked;
+  // Update the label text
+  const row = document.getElementById('send-row-'+customerId+'-'+contactIdx);
+  if(row){
+    const spans = row.querySelectorAll('span[style*="font-size:10px;color:var(--muted2)"]');
+    if(docType==='estimate' && spans[0]) spans[0].textContent = checked?'Yes':'No';
+    if(docType==='invoice' && spans[1]) spans[1].textContent = checked?'Yes':'No';
+  }
+}
+
+function setBillingRecipient(customerId, contactId, type, checked){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const ct = c.contacts.find(x=>x.id===contactId);
+  if(!ct) return;
+  if(type==='to') ct.billingTo = checked;
+  if(type==='cc') ct.billingCc = checked;
+}
+
+function openAddToBillingModal(customerId){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const others = c.contacts.filter(ct=>ct.role!=='billing');
+  if(!others.length){
+    const fl=document.createElement('div');
+    fl.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--muted);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;';
+    fl.textContent='All contacts are already in Billing';
+    document.body.appendChild(fl); setTimeout(()=>fl.remove(),3000);
+    return;
+  }
+  // Build dropdown modal
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:440px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="padding:18px 22px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">Add to Billing</div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#777;">✕</button>
+      </div>
+      <div style="padding:20px 22px;">
+        <div style="font-size:13px;color:#777;margin-bottom:12px;">Select a contact to add as billing recipient:</div>
+        <select id="addBillingSelect" style="width:100%;background:#F5F4F1;border:1.5px solid #ddd;border-radius:8px;padding:11px 14px;font-family:'Barlow',sans-serif;font-size:14px;color:#1A1A1A;outline:none;">
+          <option value="">— Select contact —</option>
+          ${others.map((ct,i)=>`<option value="${i}">${ct.name} · ${ct.role==='project-manager'?'Project Manager':'Additional'} · ${ct.email}</option>`).join('')}
+        </select>
+      </div>
+      <div style="padding:14px 22px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px;background:#F5F4F1;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:8px 16px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+        <button onclick="confirmAddToBilling(${c.id},this)" style="padding:8px 18px;border-radius:6px;border:none;background:#B8922A;color:#fff;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Add to Billing</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function confirmAddToBilling(customerId, btn){
+  const modal = btn.closest('[style*="position:fixed"]');
+  const sel = modal.querySelector('#addBillingSelect');
+  const idx = parseInt(sel.value);
+  if(isNaN(idx)||sel.value===''){
+    sel.style.borderColor='var(--danger)'; return;
+  }
+  const c = CUSTOMERS.find(x=>x.id===customerId);
+  if(!c) return;
+  const others = c.contacts.filter(ct=>ct.role!=='billing');
+  if(!others[idx]) return;
+  others[idx].role = 'billing';
+  modal.remove();
+  renderDetail(customerId);
+  setTimeout(()=>{
+    const bars = document.querySelectorAll('.tab-bar');
+    bars.forEach(bar=>{
+      const tabs = bar.querySelectorAll('.tab-btn');
+      tabs.forEach(t=>t.classList.remove('active'));
+      tabs[1]?.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('tab-billing-'+customerId)?.classList.add('active');
+    });
+  }, 60);
+  const fl=document.createElement('div');
+  fl.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;';
+  fl.textContent='✓ '+others[idx].name+' added to Billing';
+  document.body.appendChild(fl); setTimeout(()=>fl.remove(),3000);
+}
+
+function saveSpecialInstructions(customerId, text){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(c) { c.specialInstructionsText = text; c.specialInstructions = true; }
+}
+
+function enableSpecialInstructions(customerId){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(c){ c.specialInstructions = true; c.specialInstructionsText = ''; }
+  renderDetail(parseInt(customerId));
+  // After re-render, switch to Billing Options tab and focus textarea
+  setTimeout(()=>{
+    // Find the Billing Options tab button and activate it
+    const card = document.querySelector('.card .tab-bar');
+    if(card){
+      const tabs = card.querySelectorAll('.tab-btn');
+      tabs.forEach(t => t.classList.remove('active'));
+      // Billing Options is the 4th tab (index 3)
+      const billingTab = tabs[3];
+      if(billingTab){
+        billingTab.classList.add('active');
+        // Hide all panels, show billing options
+        const allPanels = document.querySelectorAll('.tab-panel');
+        allPanels.forEach(p => p.classList.remove('active'));
+        const billingPanel = document.getElementById('tab-billing-'+customerId);
+        if(billingPanel) billingPanel.classList.add('active');
+      }
+    }
+    // Focus the textarea
+    const el = document.getElementById('si-text-'+customerId);
+    if(el){ el.focus(); }
+  }, 60);
+}
+
+function showTab(key, customerId, btn){
+  // Deactivate all tabs in this card
+  const card = btn.closest('.card');
+  card.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  card.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = document.getElementById('tab-'+key+'-'+customerId);
+  if(panel) panel.classList.add('active');
+}
+
+function toggleSIFromBilling(customerId, val){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(c){ c.specialInstructions = val; }
+  renderDetail(parseInt(customerId));
+  // Stay on billing tab
+  setTimeout(()=>{
+    const bars = document.querySelectorAll('.tab-bar');
+    bars.forEach(bar=>{
+      const tabs = bar.querySelectorAll('.tab-btn');
+      tabs.forEach(t=>t.classList.remove('active'));
+      tabs[1]?.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('tab-billing-'+customerId)?.classList.add('active');
+    });
+    // Focus textarea if enabled
+    if(val){
+      const ta = document.getElementById('si-text-'+customerId);
+      if(ta && !ta.value) ta.focus();
+    }
+  }, 60);
+}
+
+function toggleSpecialInstructions(customerId, val){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(c) c.specialInstructions = val;
+  const detail = document.getElementById('si-detail-'+customerId);
+  if(detail){
+    if(val){
+      detail.innerHTML = `<div class="billing-detail-box">
+        <div style="font-size:13px;color:var(--muted);">Special instructions configured. <button class="btn btn-ghost btn-sm" style="margin-left:8px;">Edit</button></div>
+      </div>`;
+    } else {
+      detail.innerHTML = '';
+    }
+  }
+}
+
+function toggleContact(id){
+  const el = document.getElementById('jobs-'+id);
+  const lbl = document.getElementById('exp-'+id);
+  const open = el.style.display!=='none';
+  el.style.display = open?'none':'block';
+  if(lbl) lbl.textContent = open?'▾ show':'▴ hide';
+}
+
+function goToEstimate(est){
+  window.location.href = '/sdd-estimates.html?est='+encodeURIComponent(est);
+}
+
+function navigateFromStat(type, customerId){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const jobs = getAllJobs(c);
+  const pa = v=>parseFloat((v||'0').replace(/[$,]/g,'')||0);
+  const fmtAmt = n=>'$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+  const STAT_CONFIGS = {
+    estimates:{ title:'Approved — Pending Scheduling', color:'var(--info)', bg:'rgba(58,126,212,.1)',
+      items: jobs.filter(j=>j.status==='Pending scheduled'),
+      navUrl:'/sdd-estimates.html', navLabel:'View in Estimates →', emptyMsg:'No approved estimates pending scheduling.' },
+    active:{ title:'Active Jobs', color:'var(--warning)', bg:'rgba(200,130,42,.1)',
+      items: jobs.filter(j=>j.status==='In progress'),
+      navUrl:'/sdd-jobs.html', navLabel:'View in Jobs →', emptyMsg:'No active jobs.' },
+    billing:{ title:'Ready to Bill', color:'var(--danger)', bg:'rgba(217,79,79,.1)',
+      items: jobs.filter(j=>j.status==='Ready to bill'),
+      navUrl:'/sdd-jobs.html', navLabel:'View in Jobs →', emptyMsg:'No jobs ready to bill.' },
+    ar:{ title:'Accounts Receivable', color:'var(--success)', bg:'rgba(58,158,106,.1)',
+      items: jobs.filter(j=>j.status==='Completed'),
+      navUrl:'/sdd-invoices.html', navLabel:'View in Invoices →', emptyMsg:'No open invoices.' },
+    pastdue:{ title:'Total Past Due', color:'var(--danger)', bg:'rgba(217,79,79,.1)',
+      items: jobs.filter(j=>j.status==='Completed').slice(0,Math.max(0,jobs.filter(j=>j.status==='Completed').length-1)),
+      navUrl:'/sdd-invoices.html', navLabel:'View in Invoices →', emptyMsg:'No past due invoices.' }
+  };
+
+  const cfg = STAT_CONFIGS[type];
+  if(!cfg) return;
+  const totalAmt = cfg.items.reduce((s,j)=>s+pa(j.amount),0);
+  document.getElementById('spTitle').textContent = cfg.title;
+  document.getElementById('spTitle').style.color = cfg.color;
+  document.getElementById('spSummary').textContent =
+    cfg.items.length+' item'+(cfg.items.length!==1?'s':'')+
+    (totalAmt>0?' · '+fmtAmt(totalAmt):'');
+  document.getElementById('spBody').innerHTML = cfg.items.length===0
+    ? '<div style="padding:24px 20px;text-align:center;color:var(--muted2);font-size:14px;">'+cfg.emptyMsg+'</div>'
+    : cfg.items.map(j=>`<div class="sp-row" onclick="goToEstimate('`+`${j.est}')">
+        <div class="sp-icon" style="background:`+`${cfg.bg};"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="`+`${cfg.color}" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="sp-info"><div class="sp-name">`+`${j.est} — `+`${j.address}</div><div class="sp-meta">`+`${j.date}</div></div>
+        <div class="sp-right"><div class="sp-amt" style="color:`+`${cfg.color};">`+`${j.amount}</div></div>
+      </div>`).join('');
+  document.getElementById('spFootNote').textContent = 'Total: '+fmtAmt(totalAmt);
+  const btn = document.getElementById('spNavBtn');
+  btn.textContent = cfg.navLabel;
+  btn.onclick = ()=>{ closeStatPopup(); window.location.href=cfg.navUrl; };
+  document.getElementById('statPopupBg').classList.add('open');
+}
+
+// ── DOCUMENT FUNCTIONS ──
+function triggerUpload(customerId){
+  const inp = document.getElementById('fileInput-'+customerId);
+  if(inp) inp.click();
+}
+
+function handleFileUpload(event, customerId){
+  const file = event.target.files[0];
+  if(!file) return;
+  // Show a nice modal instead of prompt
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="background:#fff;border-radius:14px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="padding:16px 22px;border-bottom:1px solid #eee;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">Upload document</div>
+      <div style="padding:18px 22px;">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:11px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">Document name *</label>
+          <input type="text" id="uploadDocName" value="${file.name.replace(/\.[^.]+$/,'')}"
+            style="width:100%;background:#F5F4F1;border:1.5px solid #ddd;border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:#1A1A1A;outline:none;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:11px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">Category *</label>
+          <select id="uploadDocCat" onchange="toggleOtherCatField(this)"
+            style="width:100%;background:#F5F4F1;border:1.5px solid #ddd;border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:#1A1A1A;outline:none;">
+            <option value="Contract">Contract</option>
+            <option value="Permit">Permit</option>
+            <option value="Waiver">Waiver</option>
+            <option value="Lien Release">Lien Release</option>
+            <option value="Insurance">Insurance</option>
+            <option value="Photo">Photo</option>
+            <option value="Proposal">Proposal</option>
+            <option value="Inspection">Inspection</option>
+            <option value="Other">Other</option>
+          </select>
+          <div id="otherCatWrap" style="display:none;margin-top:8px;">
+            <input type="text" id="uploadDocCatOther" placeholder="Specify category type..."
+              style="width:100%;background:#F5F4F1;border:1.5px solid #B8922A;border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:#1A1A1A;outline:none;">
+          </div>
+        </div>
+        <div style="font-size:12px;color:#aaa;">File: ${file.name} (${(file.size/1024).toFixed(0)} KB)</div>
+      </div>
+      <div style="padding:14px 22px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px;background:#F5F4F1;">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:8px 16px;border-radius:6px;border:1px solid #ddd;background:#fff;font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+        <button onclick="confirmUploadDoc(${customerId},this,'${file.name}')" style="padding:8px 18px;border-radius:6px;border:none;background:#B8922A;color:#fff;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+          Upload document
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function toggleOtherCatField(sel){
+  const wrap = sel.closest('div').querySelector('#otherCatWrap')||document.getElementById('otherCatWrap');
+  if(wrap) wrap.style.display = sel.value==='Other' ? 'block' : 'none';
+}
+
+function confirmUploadDoc(customerId, btn, fileName){
+  const modal = btn.closest('[style*="position:fixed"]');
+  const docName = modal.querySelector('#uploadDocName').value.trim() || fileName;
+  const catSel = modal.querySelector('#uploadDocCat');
+  const catOther = modal.querySelector('#uploadDocCatOther');
+  let category = catSel ? catSel.value : 'Other';
+  // If Other selected and custom text entered, use that
+  if(category === 'Other' && catOther && catOther.value.trim()){
+    category = catOther.value.trim();
+  }
+  modal.remove();
+  const ext = fileName.match(/\.[^.]+$/)?.[0]||'.pdf';
+  const c = CUSTOMERS.find(x=>x.id===customerId);
+  if(!c) return;
+  if(!c.uploadedDocs) c.uploadedDocs = [];
+  c.uploadedDocs.push({
+    name: docName + ext,
+    category,
+    type: 'application/pdf',
+    date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    size: '—',
+    dataUrl: null
+  });
+  renderDetail(customerId);
+  // Re-activate documents tab
+  setTimeout(()=>{
+    const card = document.querySelector('.card .tab-bar');
+    if(card){
+      const tabs = card.querySelectorAll('.tab-btn');
+      tabs.forEach(t=>t.classList.remove('active'));
+      tabs[4]?.classList.add('active'); // Documents is 5th tab (index 4)
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('tab-documents-'+customerId)?.classList.add('active');
+    }
+  }, 60);
+  const flash = document.createElement('div');
+  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+  flash.textContent = '✓ Document "' + docName + '" uploaded as ' + category;
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 3500);
+}
+
+function downloadDoc(docNum, type, customer){
+  // In production this opens the actual PDF from storage
+  // For now show a flash message
+  const flash = document.createElement('div');
+  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--info);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+  flash.textContent = '↓ Downloading ' + docNum + ' — ' + customer;
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 2500);
+}
+
+function downloadUploadedDoc(customerId, idx){
+  const c = CUSTOMERS.find(x=>x.id===customerId);
+  if(!c || !c.uploadedDocs?.[idx]) return;
+  const doc = c.uploadedDocs[idx];
+  const flash = document.createElement('div');
+  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--info);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+  flash.textContent = '↓ Downloading ' + doc.name;
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 2500);
+}
+
+function deleteUploadedDoc(customerId, idx){
+  const c = CUSTOMERS.find(x=>x.id===customerId);
+  if(!c || !c.uploadedDocs?.[idx]) return;
+  const doc = c.uploadedDocs[idx];
+  if(!confirm('Delete "' + doc.name + '"?')) return;
+  c.uploadedDocs.splice(idx, 1);
+  renderDetail(customerId);
+  setTimeout(()=>{
+    const card = document.querySelector('.card .tab-bar');
+    if(card){
+      const tabs = card.querySelectorAll('.tab-btn');
+      tabs.forEach(t=>t.classList.remove('active'));
+      tabs[4]?.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('tab-documents-'+customerId)?.classList.add('active');
+    }
+  }, 60);
+}
+
+// ══ MODAL ══
+function openModal(){
+  // Clear all form fields safely
+  ['f_company','f_fname','f_lname','f_phone','f_email','f_title',
+   'f_snum','f_sname','f_city','f_zip','f_unum','f_notes',
+   'f_special_instructions'].forEach(id=>{
+    const _el=document.getElementById(id); if(_el) _el.value='';
+  });
+  const _st=document.getElementById('f_stype');    if(_st) _st.value='';
+  const _ut=document.getElementById('f_utype');    if(_ut) _ut.value='';
+  const _ss=document.getElementById('f_state');    if(_ss) _ss.value='CA';
+  const _fw=document.getElementById('f_waiver');   if(_fw) _fw.value='conditional';
+  const _ft=document.getElementById('f_terms');    if(_ft) _ft.selectedIndex=0;
+  const _fb=document.getElementById('f_billing');  if(_fb) _fb.selectedIndex=0;
+  const _fs=document.getElementById('f_since');    if(_fs) _fs.value='2026';
+  const _fc=document.getElementById('f_commercial');   if(_fc) _fc.checked=false;
+  const _fr=document.getElementById('f_residential');  if(_fr) _fr.checked=false;
+  const _lc=document.getElementById('lbl_commercial'); if(_lc) _lc.style.borderColor='var(--border2)';
+  const _lr=document.getElementById('lbl_residential');if(_lr) _lr.style.borderColor='var(--border2)';
+  const _ec=document.getElementById('extraContacts');  if(_ec) _ec.innerHTML='';
+  if(typeof extraContactCount!=='undefined') extraContactCount=0;
+  // Clear errors
+  document.querySelectorAll('#modalBg .ferr').forEach(e=>e.classList.remove('show'));
+  document.querySelectorAll('#modalBg .err').forEach(e=>e.classList.remove('err'));
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modalBg').classList.remove('open');
+}
+
+function addExtraContact(){
+  extraContactCount++;
+  const i = extraContactCount;
+  const div = document.createElement('div');
+  div.className = 'extra-contact';
+  div.id = 'ec-' + i;
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Contact ${i}</div>
+      <button class="ec-remove" type="button" onclick="document.getElementById('ec-${i}').remove()">×</button>
+    </div>
+    <div class="ff" style="margin-bottom:14px;">
+      <label>Contact type <span class="req">*</span></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:500;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;transition:all .15s;" onclick="this.style.borderColor='var(--gold)';this.style.background='rgba(184,146,42,.06)';this.closest('.extra-contact').querySelectorAll('.ct-radio-lbl').forEach(l=>{if(l!==this){l.style.borderColor='var(--border2)';l.style.background='';}});" class="ct-radio-lbl">
+          <input type="radio" name="ec-type-${i}" value="project-manager" class="ec-type" style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;"> 👷 Project Manager
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:500;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;transition:all .15s;" onclick="this.style.borderColor='var(--gold)';this.style.background='rgba(184,146,42,.06)';this.closest('.extra-contact').querySelectorAll('.ct-radio-lbl').forEach(l=>{if(l!==this){l.style.borderColor='var(--border2)';l.style.background='';}});" class="ct-radio-lbl">
+          <input type="radio" name="ec-type-${i}" value="billing" class="ec-type" style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;"> 💳 Billing Contact
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:500;padding:8px 14px;border:1.5px solid var(--border2);border-radius:8px;transition:all .15s;" onclick="this.style.borderColor='var(--gold)';this.style.background='rgba(184,146,42,.06)';this.closest('.extra-contact').querySelectorAll('.ct-radio-lbl').forEach(l=>{if(l!==this){l.style.borderColor='var(--border2)';l.style.background='';}});" class="ct-radio-lbl">
+          <input type="radio" name="ec-type-${i}" value="additional" class="ec-type" style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;"> 👤 Additional
+        </label>
+      </div>
+    </div>
+    <div class="fg2">
+      <div class="ff">
+        <label>First name <span class="req">*</span></label>
+        <input type="text" class="ec-fname" placeholder="First name" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
+      </div>
+      <div class="ff">
+        <label>Last name <span class="req">*</span></label>
+        <input type="text" class="ec-lname" placeholder="Last name" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
+      </div>
+      <div class="ff">
+        <label>Phone number <span class="req">*</span></label>
+        <input type="tel" class="ec-phone" placeholder="(619) 555-0000" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
+      </div>
+      <div class="ff">
+        <label>Email address <span class="req">*</span></label>
+        <input type="email" class="ec-email" placeholder="email@company.com" oninput="this.style.borderColor=this.value?'var(--border2)':'var(--danger)'">
+      </div>
+      <div class="ff">
+        <label>Title / position</label>
+        <input type="text" class="ec-title" placeholder="e.g. Project Manager">
+      </div>
+    </div>`;
+  document.getElementById('extraContacts').appendChild(div);
+}
+
+function reqFld(id, errId){
+  const el=document.getElementById(id);
+  const ok=el&&el.value.trim()!=='';
+  if(el) el.classList.toggle('err',!ok);
+  const e=document.getElementById(errId);
+  if(e) e.classList.toggle('show',!ok);
+  return ok;
+}
+
+function saveCustomer(){
+  let ok=true;
+  ok=reqFld('f_company','e_company')&&ok;
+  ok=reqFld('f_fname','e_fname')&&ok;
+  ok=reqFld('f_lname','e_lname')&&ok;
+  ok=reqFld('f_phone','e_phone')&&ok;
+  ok=reqFld('f_email','e_email')&&ok;
+  ok=reqFld('f_snum','e_snum')&&ok;
+  ok=reqFld('f_sname','e_sname')&&ok;
+  ok=reqFld('f_stype','e_stype')&&ok;
+  ok=reqFld('f_city','e_city')&&ok;
+  ok=reqFld('f_state','e_state')&&ok;
+  ok=reqFld('f_zip','e_zip')&&ok;
+  if(!ok){ const fe=document.querySelector('#modalBg .err'); if(fe) fe.scrollIntoView({behavior:'smooth',block:'center'}); return; }
+
+  const snum=document.getElementById('f_snum').value.trim();
+  const sname=document.getElementById('f_sname').value.trim();
+  const stype=document.getElementById('f_stype').value;
+  const utype=document.getElementById('f_utype').value;
+  const unum=document.getElementById('f_unum').value.trim();
+  const city=document.getElementById('f_city').value.trim();
+  const state=document.getElementById('f_state').value;
+  const zip=document.getElementById('f_zip').value.trim();
+  let addr=snum+' '+sname+' '+stype;
+  if(utype&&unum) addr+=', '+utype+' '+unum;
+  const fullAddr=addr+', '+city+' '+state+' '+zip;
+
+  const fname=document.getElementById('f_fname').value.trim();
+  const lname=document.getElementById('f_lname').value.trim();
+  const avColors=['av-gold','av-info','av-success','av-warning'];
+  const initials=((fname[0]||'')+(lname[0]||'')).toUpperCase();
+
+  const newId=Math.max(...CUSTOMERS.map(c=>c.id))+1;
+  const comm=document.getElementById('f_commercial').checked;
+  const res=document.getElementById('f_residential').checked;
+  if(!comm&&!res){
+    document.getElementById('e_type').classList.add('show');
+    document.getElementById('e_type').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  document.getElementById('e_type').classList.remove('show');
+  const typeVal=res?'residential':'commercial';
+
+  const _g = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
+  CUSTOMERS.unshift({
+    id:newId,
+    name:_g('f_company'),
+    city:city+', '+state,
+    address:fullAddr,
+    phone:_g('f_phone'),
+    since:_g('f_since')||new Date().getFullYear().toString(),
+    type:typeVal,
+    waiver:_g('f_waiver')||'conditional',
+    portal:_g('f_billing')==='Client portal',
+    notes:_g('f_notes'),
+    specialInstructions:false,
+    specialInstructionsText:'',
+    billingMethod:'direct-email',
+    sov:false, sovEstimates:[],
+    contacts:[{
+      id:'c_'+Date.now(), name:fname+' '+lname, initials,
+      color:avColors[0], email:_g('f_email'),
+      phone:_g('f_phone'),
+      title:_g('f_title'), role:'project-manager', jobs:[]
+    }]
+  });
+
+  closeModal();
+  activeId=newId;
+  renderList();
+  renderDetail(newId);
+
+  const flash=document.createElement('div');
+  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+  flash.textContent='✓ Customer created — add billing info below';
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(),2500);
+
+  // Open billing popup
+  const custName = document.getElementById('f_company').value.trim()||CUSTOMERS[0].name;
+  setTimeout(()=>openBillingPopup(newId, custName), 300);
+}
+
+// ══ BILLING POPUP ══
+let _bpNewId = null;
+let _bpExtraContacts = [];
+
+function openBillingPopup(newId, customerName){
+  _bpNewId = newId;
+  _bpExtraContacts = [];
+  // Reset
+  const el = id => document.getElementById(id);
+  el('bpCustomerName').textContent = customerName;
+  ['bp_same_yes','bp_same_no','bp_si_yes','bp_si_no'].forEach(id=>{const e=el(id);if(e)e.checked=false;});
+  ['bp_same_yes_lbl','bp_same_no_lbl','bp_si_yes_lbl','bp_si_no_lbl'].forEach(id=>{
+    const e=el(id);if(e){e.style.borderColor='var(--border2)';e.style.background='';}
+  });
+  el('bp_diff_fields').style.display='none';
+  el('bp_si_text_wrap').style.display='none';
+  el('bp_extra_list').innerHTML='';
+  ['bp_fname','bp_lname','bp_email','bp_phone','bp_title','bp_si_text','bpe_fname','bpe_lname','bpe_email','bpe_phone'].forEach(id=>{const e=el(id);if(e)e.value='';});
+  el('bp_waiver').value='conditional';
+  el('bp_terms').value='Net 30';
+  el('bp_since').value='2026';
+  el('bp_billing_method').value='Direct email';
+  // Show popup
+  el('billingPopupBg').style.display='flex';
+}
+
+function closeBillingPopup(){
+  document.getElementById('billingPopupBg').style.display='none';
+}
+
+function bpToggleSame(same){
+  const yLbl=document.getElementById('bp_same_yes_lbl');
+  const nLbl=document.getElementById('bp_same_no_lbl');
+  if(yLbl){yLbl.style.borderColor=same?'var(--gold)':'var(--border2)';yLbl.style.background=same?'rgba(184,146,42,.06)':'';}
+  if(nLbl){nLbl.style.borderColor=!same?'var(--gold)':'var(--border2)';nLbl.style.background=!same?'rgba(184,146,42,.06)':'';}
+  document.getElementById('bp_diff_fields').style.display=same?'none':'block';
+}
+
+function bpToggleSI(yes){
+  const yLbl=document.getElementById('bp_si_yes_lbl');
+  const nLbl=document.getElementById('bp_si_no_lbl');
+  if(yLbl){yLbl.style.borderColor=yes?'var(--gold)':'var(--border2)';yLbl.style.background=yes?'rgba(184,146,42,.06)':'';}
+  if(nLbl){nLbl.style.borderColor=!yes?'var(--gold)':'var(--border2)';nLbl.style.background=!yes?'rgba(184,146,42,.06)':'';}
+  document.getElementById('bp_si_text_wrap').style.display=yes?'block':'none';
+}
+
+function bpAddExtraContact(){
+  const fn=(document.getElementById('bpe_fname')||{value:''}).value.trim();
+  const ln=(document.getElementById('bpe_lname')||{value:''}).value.trim();
+  const em=(document.getElementById('bpe_email')||{value:''}).value.trim();
+  const ph=(document.getElementById('bpe_phone')||{value:''}).value.trim();
+  if(!em) return;
+  _bpExtraContacts.push({fn,ln,em,ph});
+  ['bpe_fname','bpe_lname','bpe_email','bpe_phone'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const list=document.getElementById('bp_extra_list');
+  if(list) list.innerHTML=_bpExtraContacts.map((c,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:13px;">
+      <div><strong>${c.fn} ${c.ln}</strong> &nbsp;·&nbsp; ${c.em}${c.ph?' · '+c.ph:''}</div>
+      <button onclick="_bpExtraContacts.splice(${i},1);bpAddExtraContact()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;">✕</button>
+    </div>`).join('');
+}
+
+function saveBillingPopup(){
+  const c = CUSTOMERS.find(x=>x.id===_bpNewId);
+  if(!c) { closeBillingPopup(); return; }
+  const el = id => document.getElementById(id);
+  const avColors=['av-gold','av-info','av-success','av-warning'];
+
+  // Billing preferences
+  c.waiver = el('bp_waiver').value;
+  c.since  = el('bp_since').value;
+  c.portal = el('bp_billing_method').value==='Client portal';
+  c.billingTerms = el('bp_terms').value;
+
+  // Special instructions
+  const siYes = el('bp_si_yes').checked;
+  c.specialInstructions = siYes;
+  c.specialInstructionsText = siYes ? (el('bp_si_text').value.trim()||'') : '';
+
+  // Primary contact as billing (TO)?
+  const sameYes = el('bp_same_yes').checked;
+  const pm = c.contacts[0];
+  if(sameYes && pm){
+    c.contacts.push({
+      id:'b_'+Date.now(), name:pm.name, initials:pm.initials,
+      color:avColors[1], email:pm.email, phone:pm.phone||'',
+      title:'', role:'billing', billingTo:true, billingCc:false,
+      pmRef:pm.name, jobs:[]
+    });
+  } else if(!sameYes){
+    const bfn=el('bp_fname').value.trim();
+    const bln=el('bp_lname').value.trim();
+    const bem=el('bp_email').value.trim();
+    if(bfn&&bem){
+      const binit=((bfn[0]||'')+(bln[0]||'')).toUpperCase();
+      c.contacts.push({
+        id:'b_'+Date.now(), name:bfn+' '+bln, initials:binit,
+        color:avColors[1], email:bem, phone:el('bp_phone').value.trim()||'',
+        title:el('bp_title').value.trim()||'', role:'billing',
+        billingTo:true, billingCc:false, pmRef:'', jobs:[]
+      });
+    }
+  }
+
+  // Extra CC billing contacts
+  _bpExtraContacts.forEach((ec,i)=>{
+    const einit=((ec.fn[0]||'')+(ec.ln[0]||'')).toUpperCase();
+    const pmRef = sameYes&&pm ? pm.name : (el('bp_fname').value.trim()+' '+el('bp_lname').value.trim()).trim();
+    c.contacts.push({
+      id:'b_'+Date.now()+i, name:ec.fn+' '+ec.ln, initials:einit,
+      color:avColors[(2+i)%avColors.length], email:ec.em, phone:ec.ph||'',
+      title:'', role:'billing', billingTo:false, billingCc:true,
+      pmRef, jobs:[]
+    });
+  });
+
+  closeBillingPopup();
+  renderDetail(_bpNewId);
+  renderList();
+
+  const flash=document.createElement('div');
+  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+  flash.textContent='✓ Billing information saved';
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(),3000);
+}
+
+// ══ TYPE SELECTOR ══
+// ── ADD CONTACT MODAL ──
+let addContactCustomerId = null;
+
+function openAddContactModal(customerId){
+  addContactCustomerId = parseInt(customerId);
+  ['ac_fname','ac_lname','ac_phone','ac_email','ac_title'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['ac_pm','ac_billing','ac_additional'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.checked=false;
+  });
+  document.querySelectorAll('.ac-type-lbl').forEach(l=>{l.style.borderColor='var(--border2)';l.style.background='';});
+  ['e_ac_type','e_ac_fname','e_ac_lname','e_ac_phone','e_ac_email'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.classList.remove('show');
+  });
+  document.getElementById('addContactModal').style.display='flex';
+}
+
+function closeAddContactModal(){
+  document.getElementById('addContactModal').style.display='none';
+}
+
+function highlightACType(){
+  document.querySelectorAll('.ac-type-lbl').forEach(lbl=>{
+    const radio=lbl.querySelector('input[type=radio]');
+    lbl.style.borderColor = radio&&radio.checked ? 'var(--gold)' : 'var(--border2)';
+    lbl.style.background = radio&&radio.checked ? 'rgba(184,146,42,.06)' : '';
+  });
+  document.getElementById('e_ac_type').classList.remove('show');
+
+  // Auto-fill title based on type
+  const typeEl = document.querySelector('input[name="ac_type"]:checked');
+  const titleInput = document.getElementById('ac_title');
+  const titleWrap = document.getElementById('ac_title_wrap');
+  const titleReq = document.getElementById('ac_title_req');
+  if(!typeEl || !titleInput) return;
+
+  const billSection = document.getElementById('pm_billing_section');
+  if(typeEl.value === 'project-manager'){
+    titleInput.value = 'Project Manager';
+    titleInput.readOnly = true;
+    titleInput.style.background = 'var(--surface3)';
+    titleInput.style.color = 'var(--muted)';
+    titleInput.style.cursor = 'default';
+    if(titleReq) titleReq.textContent = '(auto-set)';
+    if(billSection) billSection.style.display = 'block';
+    // Update billing section title for PM
+    const billTitle = document.getElementById('pm_billing_section_title');
+    if(billTitle) billTitle.textContent = 'Billing information';
+  } else if(typeEl.value === 'additional'){
+    if(titleInput.value === 'Project Manager') titleInput.value = '';
+    titleInput.readOnly = false;
+    titleInput.style.background = '';
+    titleInput.style.color = '';
+    titleInput.style.cursor = '';
+    if(titleReq) titleReq.textContent = '(optional)';
+    if(billSection) billSection.style.display = 'block';
+    // Update billing section title for Additional
+    const billTitle = document.getElementById('pm_billing_section_title');
+    if(billTitle) billTitle.textContent = 'Billing information';
+    // Reset radios
+    const yesR = document.getElementById('pm_bill_yes');
+    const noR  = document.getElementById('pm_bill_no');
+    if(yesR) yesR.checked = false;
+    if(noR)  noR.checked  = false;
+    const wrap = document.getElementById('pm_extra_billing_wrap');
+    if(wrap) wrap.style.display = 'none';
+  } else {
+    if(titleInput.value === 'Project Manager') titleInput.value = '';
+    titleInput.readOnly = false;
+    titleInput.style.background = '';
+    titleInput.style.color = '';
+    titleInput.style.cursor = '';
+    if(titleReq) titleReq.textContent = '(optional)';
+    if(billSection) billSection.style.display = 'none';
+    const yesR = document.getElementById('pm_bill_yes');
+    const noR  = document.getElementById('pm_bill_no');
+    if(yesR) yesR.checked = false;
+    if(noR)  noR.checked  = false;
+    const wrap = document.getElementById('pm_extra_billing_wrap');
+    if(wrap) wrap.style.display = 'none';
+  }
+}
+
+function reqAC(id, errId){
+  const el=document.getElementById(id);
+  const ok=el&&el.value.trim()!=='';
+  if(el) el.style.borderColor=ok?'var(--border2)':'var(--danger)';
+  const e=document.getElementById(errId);
+  if(e){ e.classList.toggle('show',!ok); e.style.color='var(--danger)'; e.style.fontSize='11px'; }
+  return ok;
+}
+
+// Extra billing contacts list (temporary storage while modal is open)
+let _extraBillingContacts = [];
+
+function openEditContact(customerId, contactId){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const ct = c.contacts.find(x=>x.id===contactId);
+  if(!ct) return;
+
+  // Build edit modal
+  const modal = document.createElement('div');
+  modal.id = 'editContactModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:14px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">Edit contact</div>
+        <button onclick="document.getElementById('editContactModal').remove()"
+          style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);">✕</button>
+      </div>
+      <div style="padding:20px 22px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">First name *</label>
+          <input type="text" id="edit_fname" value="${ct.name.split(' ')[0]||''}"
+            style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">Last name *</label>
+          <input type="text" id="edit_lname" value="${ct.name.split(' ').slice(1).join(' ')||''}"
+            style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">Email *</label>
+          <input type="email" id="edit_email" value="${ct.email||''}"
+            style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">Phone</label>
+          <input type="tel" id="edit_phone" value="${ct.phone||''}"
+            style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;">
+        </div>
+        <div style="grid-column:span 2;">
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">Title / Position ${ct.role==='project-manager'?'(auto-set)':''}</label>
+          <input type="text" id="edit_title" value="${ct.title||''}"
+            style="width:100%;background:${ct.role==='project-manager'?'var(--surface3)':'var(--surface2)'};border:1.5px solid var(--border2);border-radius:8px;padding:10px 13px;font-size:14px;color:${ct.role==='project-manager'?'var(--muted)':'var(--text)'};outline:none;"
+            ${ct.role==='project-manager'?'readonly':''}>
+        </div>
+      </div>
+      <div style="padding:14px 22px;border-top:1px solid var(--border);background:var(--surface2);display:flex;justify-content:flex-end;gap:8px;">
+        <button onclick="document.getElementById('editContactModal').remove()"
+          style="padding:9px 18px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+        <button onclick="saveEditContact('${customerId}','${contactId}')"
+          style="padding:9px 18px;border-radius:8px;border:none;background:var(--gold);color:#fff;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Save changes
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+}
+
+function saveEditContact(customerId, contactId){
+  const c  = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const ct = c.contacts.find(x=>x.id===contactId);
+  if(!ct) return;
+
+  const fn = (document.getElementById('edit_fname')||{value:''}).value.trim();
+  const ln = (document.getElementById('edit_lname')||{value:''}).value.trim();
+  const em = (document.getElementById('edit_email')||{value:''}).value.trim();
+  if(!fn||!ln||!em){
+    ['edit_fname','edit_lname','edit_email'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&!el.value.trim()) el.style.borderColor='var(--danger)';
+    });
+    return;
+  }
+
+  const oldName = ct.name;
+  ct.name  = fn+' '+ln;
+  ct.email = em;
+  ct.phone = (document.getElementById('edit_phone')||{value:''}).value.trim();
+  if(ct.role!=='project-manager'){
+    ct.title = (document.getElementById('edit_title')||{value:''}).value.trim();
+  }
+  ct.initials = (fn[0]+(ln[0]||'')).toUpperCase();
+
+  // Update billing contacts that reference this contact by name
+  c.contacts.filter(bc=>bc.pmRef===oldName).forEach(bc=>bc.pmRef=ct.name);
+
+  document.getElementById('editContactModal')?.remove();
+  renderDetail(parseInt(customerId));
+
+  // Flash
+  const fl=document.createElement('div');
+  fl.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;';
+  fl.textContent='✓ '+ct.name+' updated';
+  document.body.appendChild(fl); setTimeout(()=>fl.remove(),3000);
+}
+
+function deleteContact(customerId, contactId){
+  const c  = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const ct = c.contacts.find(x=>x.id===contactId);
+  if(!ct) return;
+
+  // Confirm
+  const modal = document.createElement('div');
+  modal.id = 'delContactModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="background:var(--surface);border-radius:14px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="padding:20px 22px;">
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Delete contact?</div>
+        <div style="font-size:14px;color:var(--muted);line-height:1.6;">
+          Are you sure you want to remove <strong>${ct.name}</strong> from this client?
+          ${ct.role==='project-manager'?'<br><span style="color:var(--warning);font-size:12px;">⚠ Billing contacts linked to this PM will also be removed.</span>':''}
+        </div>
+      </div>
+      <div style="padding:14px 22px;border-top:1px solid var(--border);background:var(--surface2);display:flex;justify-content:flex-end;gap:8px;">
+        <button onclick="document.getElementById('delContactModal').remove()"
+          style="padding:9px 18px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);font-family:'Barlow',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+        <button onclick="confirmDeleteContact('${customerId}','${contactId}')"
+          style="padding:9px 18px;border-radius:8px;border:none;background:var(--danger);color:#fff;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+          Delete
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+}
+
+function confirmDeleteContact(customerId, contactId){
+  const c  = CUSTOMERS.find(x=>x.id===parseInt(customerId));
+  if(!c) return;
+  const ct = c.contacts.find(x=>x.id===contactId);
+  if(!ct) return;
+  const name = ct.name;
+
+  // If PM, also remove linked billing contacts
+  if(ct.role==='project-manager'){
+    c.contacts = c.contacts.filter(x=>x.id!==contactId && x.pmRef!==name);
+  } else {
+    c.contacts = c.contacts.filter(x=>x.id!==contactId);
+  }
+
+  document.getElementById('delContactModal')?.remove();
+  renderDetail(parseInt(customerId));
+
+  const fl=document.createElement('div');
+  fl.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--danger);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;';
+  fl.textContent='✓ '+name+' removed';
+  document.body.appendChild(fl); setTimeout(()=>fl.remove(),3000);
+}
+
+function togglePMBillingSame(val){
+  const wrap = document.getElementById('pm_extra_billing_wrap');
+  if(wrap) wrap.style.display = val ? 'block' : 'none';
+  // Style radio labels
+  const yLbl = document.getElementById('pm_bill_yes_lbl');
+  const nLbl = document.getElementById('pm_bill_no_lbl');
+  if(yLbl){ yLbl.style.borderColor=val?'var(--gold)':'var(--border2)'; yLbl.style.background=val?'rgba(184,146,42,.06)':'var(--surface2)'; yLbl.style.fontWeight=val?'600':'400'; }
+  if(nLbl){ nLbl.style.borderColor=!val?'var(--gold)':'var(--border2)'; nLbl.style.background=!val?'rgba(184,146,42,.06)':'var(--surface2)'; nLbl.style.fontWeight=!val?'600':'400'; }
+}
+
+function addExtraBillingContact(){
+  const fn = (document.getElementById('pb_fname')||{value:''}).value.trim();
+  const ln = (document.getElementById('pb_lname')||{value:''}).value.trim();
+  const em = (document.getElementById('pb_email')||{value:''}).value.trim();
+  const ph = (document.getElementById('pb_phone')||{value:''}).value.trim();
+  if(!fn||!ln||!em){
+    ['pb_fname','pb_lname','pb_email'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&!el.value.trim()) el.style.borderColor='var(--danger)';
+    });
+    return;
+  }
+  _extraBillingContacts.push({fn,ln,em,ph});
+  // Clear fields
+  ['pb_fname','pb_lname','pb_email','pb_phone'].forEach(id=>{
+    const el=document.getElementById(id); if(el){ el.value=''; el.style.borderColor=''; }
+  });
+  // Render list
+  const listEl = document.getElementById('pm_extra_billing_list');
+  if(listEl){
+    listEl.innerHTML = _extraBillingContacts.map((ct,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border-radius:6px;margin-bottom:5px;font-size:13px;">
+        <span>${ct.fn} ${ct.ln} · ${ct.em}</span>
+        <button onclick="_extraBillingContacts.splice(${i},1);addExtraBillingContact.__update&&addExtraBillingContact.__update();document.getElementById('pm_extra_billing_list').innerHTML='';_extraBillingContacts.forEach((_,j)=>{})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;">✕</button>
+      </div>`).join('');
+  }
+}
+
+function saveAddContact(){
+  // Validate type
+  const typeEl = document.querySelector('input[name="ac_type"]:checked');
+  const typeOk = !!typeEl;
+  document.getElementById('e_ac_type').classList.toggle('show',!typeOk);
+  document.querySelectorAll('.ac-type-lbl').forEach(lbl=>{
+    const r=lbl.querySelector('input'); if(!r.checked && !typeOk) lbl.style.borderColor='var(--danger)';
+  });
+  // Validate required fields: first name, last name, email mandatory always
+  let ok = typeOk;
+  ok = reqAC('ac_fname','e_ac_fname') && ok;
+  ok = reqAC('ac_lname','e_ac_lname') && ok;
+  ok = reqAC('ac_phone','e_ac_phone') && ok;
+  ok = reqAC('ac_email','e_ac_email') && ok;
+  if(!ok) return;
+
+  const fname = document.getElementById('ac_fname').value.trim();
+  const lname = document.getElementById('ac_lname').value.trim();
+  const initials = ((fname[0]||'')+(lname[0]||'')).toUpperCase();
+  const avColors = ['av-gold','av-info','av-success','av-warning','av-muted'];
+
+  const c = CUSTOMERS.find(x=>x.id===addContactCustomerId);
+  if(!c) return;
+
+  const newContact = {
+    id: 'c_'+Date.now(),
+    name: fname+' '+lname,
+    initials,
+    color: avColors[c.contacts.length % avColors.length],
+    role: typeEl.value,
+    email: document.getElementById('ac_email').value.trim(),
+    phone: document.getElementById('ac_phone').value.trim(),
+    title: document.getElementById('ac_title').value.trim(),
+    jobs: []
+  };
+
+  c.contacts.push(newContact);
+  closeAddContactModal();
+  renderDetail(addContactCustomerId);
+
+  const flash = document.createElement('div');
+  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+  flash.textContent = '✓ Contact ' + fname + ' ' + lname + ' added as ' + (typeEl.value==='project-manager'?'Project Manager':typeEl.value==='billing'?'Billing Contact':'Additional Contact');
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 3500);
+}
+
+function openTypeSel(name){
+  document.getElementById('typeSelCustomerName').textContent = 'For: '+name;
+  document.getElementById('typeSelectorBg').classList.add('open');
+}
+function closeTypeSel(){
+  document.getElementById('typeSelectorBg').classList.remove('open');
+}
+
+// ══ FILTERS ══
+function setFilter(f){
+  activeFilter=f;
+  ['all','active','billing'].forEach(x=>{
+    document.getElementById('chip-'+x).classList.toggle('active',x===f);
+  });
+  renderList();
+}
+
+// ══ SPECIAL INSTRUCTIONS TOGGLE ══
+function toggleFormSpecial(val){
+  document.getElementById('special_fields').style.display = val ? 'block' : 'none';
+  document.getElementById('waiver_std').style.display = val ? 'none' : 'block';
+  document.getElementById('si_yes_lbl').classList.toggle('sel', val);
+  document.getElementById('si_no_lbl').classList.toggle('sel', !val);
+}
+
+// ══ TYPE RADIO HANDLER ══
+function onTypeChange(){
+  const comm=document.getElementById('f_commercial').checked;
+  const res=document.getElementById('f_residential').checked;
+  document.getElementById('lbl_commercial').style.borderColor=comm?'var(--gold)':'var(--border2)';
+  document.getElementById('lbl_residential').style.borderColor=res?'var(--gold)':'var(--border2)';
+  if(comm||res) document.getElementById('e_type').classList.remove('show');
+}
+
+// ══ EVENT LISTENERS (set after DOM is ready) ══
+document.addEventListener('DOMContentLoaded', function(){
+  // Header button
+  document.getElementById('btnNewCustomer').addEventListener('click', openModal);
+  // Modal close buttons
+  document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+  document.getElementById('btnCancelModal').addEventListener('click', closeModal);
+  // Save button
+  document.getElementById('btnSaveCustomer').addEventListener('click', saveCustomer);
+  // Add contact
+  const _btnAC = document.getElementById('btnAddContact'); if(_btnAC) _btnAC.addEventListener('click', addExtraContact);
+  // Close on bg click
+  document.getElementById('modalBg').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+  // Search
+  document.getElementById('searchInput').addEventListener('input', renderList);
+  // Filters
+  document.getElementById('chip-all').addEventListener('click', ()=>setFilter('all'));
+  document.getElementById('chip-active').addEventListener('click', ()=>setFilter('active'));
+  document.getElementById('chip-billing').addEventListener('click', ()=>setFilter('billing'));
+  // Customer list clicks
+  document.getElementById('customerList').addEventListener('click', function(e){
+    const item = e.target.closest('.customer-item');
+    if(!item) return;
+    const id = parseInt(item.dataset.id);
+    activeId=id;
+    renderList();
+    renderDetail(id);
+  });
+  // Type selector
+  document.getElementById('btnCloseTypeSel').addEventListener('click', closeTypeSel);
+  document.getElementById('typeSelectorBg').addEventListener('click', function(e){ if(e.target===this) closeTypeSel(); });
+  document.getElementById('btnGoNewEst').addEventListener('click', ()=>{ closeTypeSel(); window.location.href='/sdd-estimates.html'; });
+  document.getElementById('btnGoChangOrder').addEventListener('click', ()=>{ closeTypeSel(); window.location.href='/sdd-estimates.html'; });
+  // ESC key
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); closeTypeSel(); }});
+  // Init render
+  renderList();
+  renderDetail(1);
+  activeId=1;
+  renderList();
+});
+
+// ══ SOV FUNCTIONS ══
+
+function toggleSOV(customerId, val){
+  const c = CUSTOMERS.find(x=>x.id===customerId);
+  if(c) c.sov = val;
+  renderDetail(customerId);
+  setTimeout(()=>{
+    const bars = document.querySelectorAll('.tab-bar');
+    bars.forEach(bar=>{
+      const tabs = bar.querySelectorAll('.tab-btn');
+      tabs.forEach(t=>t.classList.remove('active'));
+      if(tabs[5]) tabs[5].classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      const pnl = document.getElementById('tab-sov-'+customerId);
+      if(pnl) pnl.classList.add('active');
+    });
+  }, 60);
+}
+
+function fmtSOV(n){
+  return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function buildSOVHtml(c){
+  const jobs = getAllJobs(c);
+  const baseEsts = jobs.filter(j=>!(j.est||'').includes('-CO'));
+  const coEsts   = jobs.filter(j=>(j.est||'').includes('-CO'));
+
+  const mkBase = (j,i)=>{
+    const amt    = parseMoney(j.amount);
+    const ret    = Math.round(amt*0.1);
+    const paid   = j.status==='Completed'?amt-ret : j.status==='In progress'?Math.round(amt*0.6):0;
+    const retRec = j.status==='Completed'?ret:0;
+    const bal    = amt-paid;
+    const ck     = j.status==='Completed'?'338'+String(441+i):'';
+    const invNum = 'INV-'+(21492+i*128);
+    const status = j.status==='Completed'?'PAID / RET':'OPEN';
+    return {invNum, estNum:j.est||'', desc:j.address||j.est, amt, ret, paid, ck, retRec, status, totalPaid:paid, bal};
+  };
+  const mkCO = (j,i)=>{
+    const amt = parseMoney(j.amount);
+    const ret = Math.round(amt*0.1);
+    const ccoRef = '5/6/2026 CCO #00'+(i+1);
+    return {coNum:j.est||('CO EST '+(2805+i*76)), estNum:j.est||'', desc:j.address||'Change order', ccoRef, amt, ret, paid:0, retRec:0, status:'OPEN', totalPaid:0, bal:amt};
+  };
+
+  const rows   = baseEsts.map(mkBase);
+  const coRows = coEsts.map(mkCO);
+
+  const bTotAmt  = rows.reduce((s,r)=>s+r.amt,0);
+  const bTotRet  = rows.reduce((s,r)=>s+r.ret,0);
+  const bTotPaid = rows.reduce((s,r)=>s+r.paid,0);
+  const bTotRetRec = rows.reduce((s,r)=>s+r.retRec,0);
+  const bTotBal  = rows.reduce((s,r)=>s+r.bal,0);
+  const coTotAmt = coRows.reduce((s,r)=>s+r.amt,0);
+  const coTotBal = coRows.reduce((s,r)=>s+r.bal,0);
+  const grandTotal = bTotAmt + coTotAmt;
+
+  const sc = s=>s==='PAID / RET'?'color:var(--success);font-weight:700;':'color:var(--warning);font-weight:700;';
+  const tdN = (v,extra)=>`<td style="text-align:right;font-size:13px;padding:10px 10px;border-bottom:1px solid var(--border);font-weight:600;${extra||''}">${fmtSOV(v)}</td>`;
+  const tdS = (v,extra)=>`<td style="padding:10px 10px;border-bottom:1px solid var(--border);font-size:12px;${extra||''}">${v}</td>`;
+
+  // Base rows — Description includes EST link
+  const baseRowsHtml = rows.map(r=>`<tr>
+    ${tdS(`<div style="font-size:11px;color:var(--muted);margin-bottom:2px;">${r.invNum}</div>
+           <button onclick="openSOVInvoicePreview('${r.estNum||''}')" style="background:none;border:none;font-size:13px;font-weight:600;color:var(--info);cursor:pointer;padding:0;text-align:left;text-decoration:underline;">${r.desc}</button>
+           ${r.estNum?`<div style="font-size:10px;color:var(--muted);margin-top:2px;">${r.estNum}</div>`:''}`)}
+    ${tdN(r.amt)}
+    ${tdN(r.ret,'color:var(--danger);')}
+    ${tdN(r.paid)}
+    ${tdS(r.ck,'color:var(--muted);')}
+    ${tdN(r.retRec)}
+    ${tdS(r.status, sc(r.status))}
+    ${tdN(r.totalPaid)}
+    ${tdN(r.bal, r.bal>0?'color:var(--danger);':'color:var(--success);')}
+  </tr>`).join('');
+
+  // Totals row — exact column alignment
+  const totRowBase = `<tr style="background:var(--surface2);font-weight:700;font-size:13px;">
+    <td style="padding:10px 10px;font-weight:700;">Totals</td>
+    <td style="text-align:right;padding:10px 10px;">${fmtSOV(bTotAmt)}</td>
+    <td style="text-align:right;padding:10px 10px;color:var(--danger);">${fmtSOV(bTotRet)}</td>
+    <td style="text-align:right;padding:10px 10px;">${fmtSOV(bTotPaid)}</td>
+    <td style="padding:10px 10px;"></td>
+    <td style="text-align:right;padding:10px 10px;">${fmtSOV(bTotRetRec)}</td>
+    <td style="padding:10px 10px;"></td>
+    <td style="text-align:right;padding:10px 10px;">${fmtSOV(bTotPaid)}</td>
+    <td style="text-align:right;padding:10px 10px;${bTotBal>0?'color:var(--danger);':'color:var(--success);'}">${fmtSOV(bTotBal)}</td>
+  </tr>`;
+
+  // CO rows
+  const coRowsHtml = coRows.length ? coRows.map(r=>`<tr>
+    ${tdS(`<div style="font-size:11px;color:var(--warning);font-weight:600;margin-bottom:2px;">${r.coNum}</div>
+           <div style="font-size:12px;">${r.desc}</div>
+           <div style="font-size:10px;color:var(--muted);margin-top:2px;">${r.ccoRef}</div>`)}
+    ${tdN(r.amt,'color:var(--warning);')}
+    <td style="text-align:right;padding:10px 10px;border-bottom:1px solid var(--border);color:var(--muted);">—</td>
+    ${tdN(r.ret,'color:var(--danger);')}
+    ${tdN(r.paid)}
+    ${tdS('—','color:var(--muted);')}
+    ${tdS(r.status, sc(r.status))}
+    ${tdN(r.totalPaid)}
+    ${tdN(r.bal,'color:var(--danger);')}
+  </tr>`).join('')
+  : `<tr><td colspan="9" style="text-align:center;padding:16px;color:var(--muted2);font-style:italic;">No change orders</td></tr>`;
+
+  const totRowCO = coRows.length ? `<tr style="background:var(--surface2);font-weight:700;font-size:13px;">
+    <td style="padding:10px 10px;font-weight:700;">Totals</td>
+    <td style="text-align:right;padding:10px 10px;color:var(--warning);">${fmtSOV(coTotAmt)}</td>
+    <td colspan="5" style="padding:10px 10px;"></td>
+    <td style="text-align:right;padding:10px 10px;">$0.00</td>
+    <td style="text-align:right;padding:10px 10px;color:var(--danger);">${fmtSOV(coTotBal)}</td>
+  </tr>` : '';
+
+  return `
+  <!-- Summary header -->
+  <div style="background:rgba(184,146,42,.06);border:1px solid rgba(184,146,42,.2);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+    <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Total Base Bid</div>
+      <div style="font-size:18px;font-weight:700;color:var(--gold);">${fmtSOV(bTotAmt)}</div></div>
+    <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Total Change Orders</div>
+      <div style="font-size:18px;font-weight:700;color:var(--warning);">${fmtSOV(coTotAmt)}</div></div>
+    <div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Job Total with COs</div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);">${fmtSOV(grandTotal)}</div></div>
+  </div>
+
+  <!-- BASE ESTIMATE -->
+  <div class="sov-section">
+    <div class="sov-section-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Base Estimate
+    </div>
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:auto;">
+      <table class="sov-table" style="min-width:820px;">
+        <thead><tr>
+          <th style="width:24%;min-width:160px;">Item # / Description</th>
+          <th class="num">Amount</th>
+          <th class="num" style="color:var(--danger);">Retention Held</th>
+          <th class="num">Pymt Received</th>
+          <th>CK #</th>
+          <th class="num">Ret. Received</th>
+          <th>Status</th>
+          <th class="num">Total Paid</th>
+          <th class="num">Balance</th>
+        </tr></thead>
+        <tbody>${baseRowsHtml}${totRowBase}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHANGE ORDERS -->
+  <div class="sov-section">
+    <div class="sov-section-title">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Change Orders
+    </div>
+    <div style="border:1px solid var(--border);border-radius:10px;overflow:auto;">
+      <table class="sov-table" style="min-width:820px;">
+        <thead><tr>
+          <th style="width:28%;min-width:180px;">CO / Description</th>
+          <th class="num">Estimate</th>
+          <th class="num">Amount</th>
+          <th class="num" style="color:var(--danger);">Retention Held</th>
+          <th class="num">Pymt Received</th>
+          <th>CK #</th>
+          <th>Status</th>
+          <th class="num">Total Paid</th>
+          <th class="num">Balance</th>
+        </tr></thead>
+        <tbody>${coRowsHtml}${totRowCO}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FOOTER TOTALS -->
+  <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;margin-top:4px;">
+    <div class="sov-tot-row"><span>Total Change Orders</span><span>${fmtSOV(coTotAmt)}</span></div>
+    <div class="sov-tot-row grand"><span>Job Total with Change Orders</span><span>${fmtSOV(grandTotal)}</span></div>
+    <div class="sov-tot-row highlight" style="margin-top:4px;"><span>Pending Balance</span><span>${fmtSOV(bTotBal+coTotBal)}</span></div>
+  </div>`;
+}
+
+function openSOVInvoicePreview(estNum){
+  if(!estNum) return;
+
+  // Find the customer whose SOV tab is open
+  const c = CUSTOMERS.find(x=>x.id===activeId)||CUSTOMERS[0];
+  if(!c) return;
+
+  // Find the job matching this estimate number
+  const jobs = getAllJobs(c);
+  const job  = jobs.find(j=>j.est===estNum)||{};
+
+  const invNum  = 'INV-'+estNum.replace('EST-','');
+  const today   = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const dueDate = new Date(Date.now()+15*24*60*60*1000).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const fmtAmt  = n=>'$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const amt     = parseMoney(job.amount||'0');
+  const address = job.address||'';
+
+  // Line items — use job data if available
+  const lines = [
+    {desc:'Demolition services — '+address},
+  ];
+
+  const linesHtml = lines.map(l=>`<tr><td style="padding:12px;font-size:14px;">${l.desc}</td></tr>`).join('');
+
+  const w = window.open('','_blank','width=860,height=900,scrollbars=yes');
+  if(!w) return;
+
+  w.document.write('<!DOCTYPE html><html><head><title>Invoice '+invNum+'</title><style>'
+    +'body{font-family:Arial,sans-serif;font-size:13px;margin:40px;color:#1A1A1A;max-width:760px;}'
+    +'.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;padding-bottom:20px;border-bottom:3px solid #B8922A;}'
+    +'.logo-txt{font-size:36px;font-weight:900;color:#1A1A1A;letter-spacing:-2px;}'
+    +'.logo-txt span{color:#B8922A;}'
+    +'.inv-block{text-align:right;}'
+    +'.inv-label{font-size:38px;font-weight:900;color:#B8922A;line-height:1;}'
+    +'.inv-num{font-size:17px;font-weight:700;margin-top:4px;}'
+    +'.sub{font-size:12px;color:#777;}'
+    +'.bill-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:28px;}'
+    +'.bill-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#aaa;margin-bottom:8px;}'
+    +'.bill-val{font-size:14px;line-height:1.6;}'
+    +'.bill-val strong{font-size:16px;}'
+    +'table{width:100%;border-collapse:collapse;}'
+    +'thead th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#777;padding:10px 14px;border-top:2px solid #E0E0E0;border-bottom:1px solid #E0E0E0;}'
+    +'tbody td{padding:13px 14px;border-bottom:1px solid #F0F0F0;}'
+    +'.total-section{margin-top:0;}'
+    +'.total-row{display:flex;justify-content:space-between;padding:14px 14px;font-size:18px;font-weight:700;border-top:2px solid #B8922A;background:#F8F6F2;}'
+    +'.footer{margin-top:40px;padding-top:16px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:11px;color:#bbb;}'
+    +'@media print{.no-print{display:none;}}'
+    +'</style></head><body>'
+    +'<div class="no-print" style="margin-bottom:24px;">'
+    +'<button onclick="window.print()" style="padding:10px 22px;background:#B8922A;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;">🖨&nbsp; Print / Save as PDF</button>'
+    +'</div>'
+    +'<div class="hdr">'
+    +'<div>'
+    +'<div class="logo-txt"><span>S</span>DD</div>'
+    +'<div class="sub" style="margin-top:6px;">SDD Demolition<br>San Diego, CA · (619) 555-0100<br>info@sdddemolition.com<br>License #1094583</div>'
+    +'</div>'
+    +'<div class="inv-block">'
+    +'<div class="inv-label">INVOICE</div>'
+    +'<div class="inv-num">'+invNum+'</div>'
+    +'<div class="sub" style="margin-top:6px;">Date: '+today+'<br><span style="color:#D94F4F;">Due: '+dueDate+'</span></div>'
+    +'</div>'
+    +'</div>'
+    +'<div class="bill-grid">'
+    +'<div>'
+    +'<div class="bill-lbl">Bill to</div>'
+    +'<div class="bill-val"><strong>'+c.name+'</strong><br>'+c.address+'<br>'+c.city+', CA</div>'
+    +'</div>'
+    +'<div>'
+    +'<div class="bill-lbl">Job site</div>'
+    +'<div class="bill-val"><strong>'+address+'</strong><br>EST Ref: <span style="color:#B8922A;font-weight:700;">'+estNum+'</span><br>Terms: Net 15</div>'
+    +'</div>'
+    +'</div>'
+    +'<table>'
+    +'<thead><tr><th style="text-align:left;width:100%;">Description of work</th></tr></thead>'
+    +'<tbody>'
+    +linesHtml
+    +'</tbody>'
+    +'</table>'
+    +'<div class="total-section">'
+    +'<div class="total-row"><span>Total due</span><span style="color:#B8922A;">'+fmtAmt(amt)+'</span></div>'
+    +'</div>'
+    +'<div class="footer">'
+    +'<span>SDD Demolition &nbsp;·&nbsp; San Diego, CA &nbsp;·&nbsp; License #1094583</span>'
+    +'<span>Thank you for your business</span>'
+    +'</div>'
+    +'</body></html>');
+  w.document.close();
+}
+
+
+function exportSOVPdf(customerId){
+  const c = CUSTOMERS.find(x=>x.id===customerId);
+  if(!c) return;
+  const w = window.open('','_blank');
+  if(!w) return;
+  const body = buildSOVHtml(c);
+  w.document.write(`<!DOCTYPE html><html><head>
+    <title>SOV - ${c.name}</title>
+    <style>
+      body{font-family:Arial,sans-serif;font-size:11px;margin:20px;color:#1A1A1A;}
+      h2{font-size:14px;margin-bottom:4px;}
+      h3{font-size:12px;margin:16px 0 6px;border-bottom:2px solid #B8922A;padding-bottom:4px;color:#B8922A;}
+      table{width:100%;border-collapse:collapse;margin-bottom:0;}
+      th{background:#F5F4F1;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border:1px solid #DDD;text-align:left;}
+      td{padding:6px 8px;border:1px solid #DDD;font-size:10px;}
+      .num{text-align:right;font-weight:600;}
+      .status-paid{color:#3A9E6A;font-weight:700;}
+      .status-open{color:#C8822A;font-weight:700;}
+      .totals-row td{background:#F5F4F1;font-weight:700;}
+      .summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;padding:12px;background:#FFF8EE;border:1px solid #B8922A;border-radius:6px;}
+      .sum-box .lbl{font-size:9px;text-transform:uppercase;color:#777;margin-bottom:2px;}
+      .sum-box .val{font-size:14px;font-weight:700;color:#B8922A;}
+      .footer-row{margin-top:10px;padding:10px;background:#F5F4F1;border-radius:4px;}
+      .footer-row div{display:flex;justify-content:space-between;padding:2px 0;font-size:11px;}
+      .footer-row .grand{font-weight:700;font-size:12px;border-top:1px solid #CCC;margin-top:4px;padding-top:4px;}
+      .footer-row .red{color:#D94F4F;font-weight:700;}
+      .sov-section{margin-bottom:16px;}
+      .sov-section-title{font-size:10px;font-weight:700;text-transform:uppercase;color:#777;margin-bottom:6px;}
+      @media print{body{margin:10px;}button{display:none;}}
+    </style>
+  </head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:#B8922A;">SDD Demolition</div>
+        <div style="font-size:11px;color:#777;">Schedule of Values</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:14px;font-weight:700;">${c.name}</div>
+        <div style="font-size:11px;color:#777;">${c.address||''}</div>
+        <div style="font-size:10px;color:#AAA;">Generated ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
+      </div>
+    </div>
+    <hr style="border:none;border-top:2px solid #B8922A;margin-bottom:16px;">
+    <button onclick="window.print()" style="margin-bottom:12px;padding:8px 16px;background:#B8922A;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">🖨 Print / Save as PDF</button>
+    ${body}
+  </body></html>`);
+  w.document.close();
+}
+
+</script>
+
+<!-- ══ MOBILE NAV ══ -->
+<nav class="mobile-nav">
+  <a href="/index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Home
+  </a>
+  <a href="/sdd-customers.html" class="active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    Customers
+  </a>
+  <a href="/sdd-estimates.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Estimates
+  </a>
+  <a href="/sdd-jobs.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Jobs
+  </a>
+  <a href="/sdd-invoices.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Invoices
+  </a>
+  <a href="/sdd-vendors.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Vendors
+  </a>
+</nav>
+
+
+<!-- ══ BILLING INFO POPUP ══ -->
+<div id="billingPopupBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;">
+  <div style="background:var(--surface);border-radius:16px;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto;">
+
+    <!-- Head -->
+    <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;">Billing information</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="bpCustomerName"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="closeBillingPopup()">✕ Skip</button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:22px 24px;max-height:75vh;overflow-y:auto;">
+
+      <!-- Q1: Is primary contact same as billing? -->
+      <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;">Is the primary contact the same as the billing contact?</div>
+        <div style="display:flex;gap:10px;">
+          <label id="bp_same_yes_lbl" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;padding:11px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
+            <input type="radio" name="bp_same" value="yes" id="bp_same_yes" onchange="bpToggleSame(true)" style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer;">
+            ✓ Yes — same as primary contact
+          </label>
+          <label id="bp_same_no_lbl" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;padding:11px 16px;border:1.5px solid var(--border2);border-radius:10px;transition:all .15s;">
+            <input type="radio" name="bp_same" value="no" id="bp_same_no" onchange="bpToggleSame(false)" style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer;">
+            No — different billing contact
+          </label>
+        </div>
+
+        <!-- Different billing contact fields -->
+        <div id="bp_diff_fields" style="display:none;margin-top:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Billing contact</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="ff"><label>First name <span style="color:var(--danger);">*</span></label><input type="text" id="bp_fname" placeholder="First name"></div>
+            <div class="ff"><label>Last name <span style="color:var(--danger);">*</span></label><input type="text" id="bp_lname" placeholder="Last name"></div>
+            <div class="ff"><label>Email <span style="color:var(--danger);">*</span></label><input type="email" id="bp_email" placeholder="billing@company.com"></div>
+            <div class="ff"><label>Phone</label><input type="tel" id="bp_phone" placeholder="(619) 555-0000"></div>
+            <div class="ff" style="grid-column:span 2;"><label>Title / Position</label><input type="text" id="bp_title" placeholder="e.g. Billing Manager"></div>
+          </div>
+        </div>
+
+        <!-- Extra billing contacts -->
+        <div id="bp_extra_contacts_wrap" style="margin-top:14px;">
+          <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;">Additional billing contacts (CC):</div>
+          <div id="bp_extra_list"></div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;">Add billing contact</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <input type="text" id="bpe_fname" placeholder="First name" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+              <input type="text" id="bpe_lname" placeholder="Last name" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+              <input type="email" id="bpe_email" placeholder="Email address" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+              <input type="tel" id="bpe_phone" placeholder="Phone (optional)" style="background:#fff;border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;">
+            </div>
+            <button type="button" onclick="bpAddExtraContact()" style="font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;border:1.5px solid var(--gold);background:rgba(184,146,42,.08);color:var(--gold);cursor:pointer;font-family:'Barlow',sans-serif;display:flex;align-items:center;gap:6px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add billing contact
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Billing preferences -->
+      <div style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;">Billing preferences</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="ff">
+            <label>Conditional waiver</label>
+            <select id="bp_waiver">
+              <option value="conditional">Conditional waiver</option>
+              <option value="unconditional">Unconditional waiver</option>
+              <option value="none">No waiver required</option>
+            </select>
+          </div>
+          <div class="ff">
+            <label>Payment terms</label>
+            <select id="bp_terms">
+              <option value="Net 30">Net 30</option>
+              <option value="Net 15">Net 15</option>
+              <option value="Net 45">Net 45</option>
+              <option value="Due on completion">Due on completion</option>
+              <option value="50% deposit">50% deposit required</option>
+            </select>
+          </div>
+          <div class="ff">
+            <label>Customer since</label>
+            <input type="number" id="bp_since" value="2026" min="2000" max="2100" placeholder="2026">
+          </div>
+          <div class="ff">
+            <label>Billing method</label>
+            <select id="bp_billing_method">
+              <option value="Direct email">Direct email</option>
+              <option value="Client portal">Client portal</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Special instructions -->
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;">Special instructions</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;">Are special instructions required?</div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <label id="bp_si_yes_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);font-weight:500;transition:all .15s;">
+            <input type="radio" name="bp_si" value="yes" id="bp_si_yes" onchange="bpToggleSI(true)" style="accent-color:var(--gold);width:15px;height:15px;"> Yes
+          </label>
+          <label id="bp_si_no_lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);font-weight:500;transition:all .15s;">
+            <input type="radio" name="bp_si" value="no" id="bp_si_no" onchange="bpToggleSI(false)" style="accent-color:var(--gold);width:15px;height:15px;"> No
+          </label>
+        </div>
+        <div id="bp_si_text_wrap" style="display:none;">
+          <textarea id="bp_si_text" rows="3" placeholder="Enter special billing instructions for this client..." style="width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:12px 14px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;resize:vertical;transition:border .15s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border2)'"></textarea>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:14px 24px;border-top:1px solid var(--border);background:var(--surface2);border-radius:0 0 16px 16px;display:flex;justify-content:space-between;align-items:center;">
+      <button class="btn btn-ghost btn-sm" onclick="closeBillingPopup()">Skip for now</button>
+      <button class="btn btn-gold" onclick="saveBillingPopup()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Save billing info
+      </button>
+    </div>
+  </div>
+</div>
+</body>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDD — Vendors & Bills</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--gold:#B8922A;--gold-light:#C9A84C;--gold-dim:rgba(184,146,42,0.12);--gold-dim2:rgba(184,146,42,0.07);--surface:#FFFFFF;--surface2:#F5F4F1;--surface3:#ECEAE5;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);--text:#1A1A1A;--muted:#777;--muted2:#AAA;--danger:#D94F4F;--success:#3A9E6A;--warning:#C8822A;--info:#3A7ED4;--purple:#7C5CBF;}
+body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-svg .s-bar{fill:var(--gold);}.logo-svg .letters{fill:#1A1A1A;}
+.logo-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+.nav{display:flex;gap:4px;}
+.nav-item{padding:6px 14px;border-radius:6px;font-size:14px;color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;text-decoration:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);}
+.nav-item svg{width:15px;height:15px;opacity:.7;}
+.btn{padding:8px 18px;border-radius:6px;font-size:14px;font-family:'Barlow',sans-serif;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-gold{background:var(--gold);color:#fff;font-weight:600;}
+.btn-gold:hover{background:var(--gold-light);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);}
+.btn-sm{padding:5px 13px;font-size:13px;}
+.app{display:flex;flex:1;overflow:hidden;height:calc(100vh - 112px);}
+.view-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.view-toggle{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;}
+.vt-btn{padding:5px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Barlow',sans-serif;transition:all .15s;white-space:nowrap;}
+.vt-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.panel-left{width:300px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:all .2s;}
+.search-box{margin:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;flex:1;}
+.search-box input::placeholder{color:var(--muted2);}
+.left-list{flex:1;overflow-y:auto;}
+.left-list::-webkit-scrollbar{width:4px;}
+.left-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px;}
+.list-item{padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
+.list-item:hover{background:var(--surface2);}
+.list-item.active{background:var(--gold-dim2);border-left:3px solid var(--gold);}
+.li-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;}
+.li-name{font-size:14px;font-weight:600;}
+.li-amt{font-size:14px;font-weight:700;color:var(--danger);}
+.li-sub{font-size:12px;color:var(--muted);}
+.panel-right{flex:1;overflow-y:auto;background:#F0EEE9;}
+.panel-right::-webkit-scrollbar{width:6px;}
+.panel-right::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+.empty-state{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);}
+.empty-state svg{width:40px;height:40px;opacity:.25;}
+.detail-wrap{padding:20px 24px;}
+.card{background:var(--surface);border-radius:12px;padding:18px 20px;margin-bottom:14px;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+.pill-paid{background:rgba(58,158,106,.12);color:var(--success);}
+.pill-unpaid{background:rgba(217,79,79,.1);color:var(--danger);}
+.pill-partial{background:rgba(200,130,42,.12);color:var(--warning);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.04em;padding:7px 10px;border-bottom:1px solid var(--border);}
+td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+/* COA */
+.coa-wrap{display:flex;flex-direction:column;height:100%;}
+.coa-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.coa-search-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;width:260px;}
+.coa-search-box input{background:none;border:none;outline:none;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);flex:1;}
+.coa-search-box input::placeholder{color:var(--muted2);}
+.coa-tbl-wrap{flex:1;overflow-y:auto;background:var(--surface);margin:16px;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);}
+.coa-tbl-wrap::-webkit-scrollbar{width:4px;}
+.coa-tbl-wrap::-webkit-scrollbar-thumb{background:var(--surface3);}
+.coa-tbl{width:100%;border-collapse:collapse;}
+.coa-tbl th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:10px 16px;border-bottom:2px solid var(--border);background:var(--surface);text-align:left;position:sticky;top:0;z-index:2;}
+.coa-row{border-bottom:1px solid var(--border);transition:background .1s;}
+.coa-row:hover{background:var(--surface2);}
+.coa-row td{padding:10px 16px;font-size:13px;}
+.coa-row td:last-child{text-align:right;}
+.coa-row.lvl0 td:first-child{font-weight:700;}
+.coa-row.lvl1 td:first-child{font-weight:500;}
+.coa-row.lvl2 td:first-child{font-weight:400;color:var(--muted);}
+.coa-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;}
+.cb-bank{background:rgba(58,126,212,.1);color:var(--info);}
+.cb-asset{background:rgba(58,158,106,.1);color:var(--success);}
+.cb-ap{background:rgba(217,79,79,.1);color:var(--danger);}
+.cb-cc{background:rgba(217,79,79,.08);color:#B03030;}
+.cb-liability{background:rgba(217,79,79,.07);color:#C04040;}
+.cb-equity{background:rgba(124,92,191,.1);color:var(--purple);}
+.cb-income{background:rgba(58,158,106,.12);color:#2A8A5A;}
+.cb-cogs{background:rgba(200,130,42,.12);color:var(--warning);}
+.cb-expense{background:rgba(217,79,79,.07);color:#C04040;}
+.cb-other{background:var(--surface3);color:var(--muted);}
+.exp-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:11px;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:3px;}
+.exp-btn:hover{background:var(--surface3);}
+.sub-btn{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-family:'Barlow',sans-serif;transition:all .12s;}
+.sub-btn:hover{border-color:var(--gold);color:var(--gold);}
+/* MODALS */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:400;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:14px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.2);}
+.modal-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;}
+.modal-body{padding:20px 22px;max-height:65vh;overflow-y:auto;}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2);}
+.ff{margin-bottom:14px;}
+.ff label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px;}
+.ff input,.ff select,.ff textarea{width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;padding:10px 13px;font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border .15s;}
+.ff input:focus,.ff select:focus{border-color:var(--gold);}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+svg{display:block;}
+@media(max-width:768px){.nav{display:none;}.logo-text{display:none;}.app{flex-direction:column;height:auto;}.panel-left{width:100%;}.left-list{max-height:200px;}body{padding-bottom:72px;}.mobile-nav{display:flex !important;}}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:8px 0 12px;}
+.mobile-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--muted);text-decoration:none;}
+.mobile-nav a.active{color:var(--gold);}
+.mobile-nav svg{width:22px;height:22px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <svg class="logo-svg" viewBox="0 0 120 60" width="56" height="28"><polygon class="s-bar" points="28,8 58,8 42,52 12,52"/><text x="4" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">S</text><text x="44" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">DD</text></svg>
+    <span class="logo-text">Demolition</span>
+  </div>
+  <nav class="nav">
+    <a class="nav-item" href="/index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a class="nav-item" href="/sdd-customers.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Customers</a>
+    <a class="nav-item" href="/sdd-estimates.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Estimates</a>
+    <a class="nav-item" href="/sdd-jobs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jobs</a>
+    <a class="nav-item" href="/sdd-invoices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Invoices</a>
+    <a class="nav-item active" href="/sdd-vendors.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Vendors</a>
+  </nav>
+  <button class="btn btn-gold" id="addBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span id="addBtnLabel">New vendor</span></button>
+</div>
+
+<div class="view-bar">
+  <div class="view-toggle">
+    <button class="vt-btn active" id="btnVendors" onclick="setView('vendors')">Vendors</button>
+    <button class="vt-btn" id="btnBills" onclick="setView('bills')">Bills</button>
+    <button class="vt-btn" id="btnCC" onclick="setView('cc')">Credit cards</button>
+    <button class="vt-btn" id="btnRecon" onclick="setView('recon')">Reconciliation</button>
+    <button class="vt-btn" id="btnCOA" onclick="setView('coa')">Chart of Accounts</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="panel-left" id="leftPanel">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;color:var(--muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search vendors..." oninput="renderLeft(this.value)">
+    </div>
+    <div class="left-list" id="leftList"></div>
+  </div>
+  <div class="panel-right" id="panelRight">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Select a vendor to view details</span>
+    </div>
+  </div>
+</div>
+
+<!-- VENDOR MODAL -->
+<div class="modal-bg" id="vendorModal">
+  <div class="modal-box">
+    <div class="modal-head"><div class="modal-title">New vendor</div><button class="btn btn-ghost btn-sm" onclick="closeModal('vendorModal')">&#10005;</button></div>
+    <div class="modal-body">
+      <div class="ff"><label>Vendor name *</label><input type="text" id="v_name" placeholder="Company name"></div>
+      <div class="fg2">
+        <div class="ff"><label>Vendor type</label><select id="v_type"><option value="subcontractor">Subcontractor</option><option value="equipment">Equipment</option><option value="disposal">Disposal</option><option value="materials">Materials</option><option value="permits">Permits</option><option value="insurance">Insurance</option><option value="payroll">Payroll</option><option value="utilities">Utilities</option><option value="other">Other</option></select></div>
+        <div class="ff"><label>1099 eligible</label><select id="v_1099"><option value="yes">Yes</option><option value="no">No</option></select></div>
+        <div class="ff"><label>Billed vendor</label><select id="v_billed"><option value="yes">Yes</option><option value="no">No</option></select></div>
+        <div class="ff"><label>Contact</label><input type="text" id="v_contact" placeholder="Name"></div>
+        <div class="ff"><label>Phone</label><input type="tel" id="v_phone" placeholder="(619) 555-0000"></div>
+        <div class="ff"><label>Email</label><input type="email" id="v_email" placeholder="email@company.com"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="closeModal('vendorModal')">Cancel</button><button class="btn btn-gold" onclick="saveVendor()">Save vendor</button></div>
+  </div>
+</div>
+
+<!-- COA MODAL -->
+<div class="modal-bg" id="coaModal">
+  <div class="modal-box">
+    <div class="modal-head"><div class="modal-title" id="coaModalTitle">New account</div><button class="btn btn-ghost btn-sm" onclick="closeModal('coaModal')">&#10005;</button></div>
+    <div class="modal-body">
+      <div class="ff"><label>Account name *</label><input type="text" id="coa_name" placeholder="e.g. Disposal Fees"></div>
+      <div class="ff"><label>Account type *</label>
+        <select id="coa_type">
+          <option>Bank</option><option>Accounts Receivable</option><option>Other Current Asset</option><option>Fixed Asset</option><option>Accounts Payable</option><option>Credit Card</option><option>Other Current Liability</option><option>Long Term Liability</option><option>Equity</option><option>Income</option><option>Cost of Goods Sold</option><option selected>Expense</option><option>Other Income</option><option>Other Expense</option><option>Non-Posting</option>
+        </select>
+      </div>
+      <div class="ff"><label>Parent account (optional)</label><select id="coa_parent"><option value="">&#8212; Top level &#8212;</option></select></div>
+      <div style="background:rgba(58,126,212,.07);border:1px solid rgba(58,126,212,.2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--info);">Balance starts at <strong>$0.00</strong>. Will update when connected to Supabase.</div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost btn-sm" onclick="closeModal('coaModal')">Cancel</button><button class="btn btn-gold" onclick="saveCOAAccount()">Save account</button></div>
+  </div>
+</div>
+
+<nav class="mobile-nav">
+  <a href="/index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Home</a>
+  <a href="/sdd-customers.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Customers</a>
+  <a href="/sdd-estimates.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Estimates</a>
+  <a href="/sdd-jobs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>Jobs</a>
+  <a href="/sdd-invoices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/></svg>Invoices</a>
+  <a href="/sdd-vendors.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Vendors</a>
+</nav>
+
+<script>
+var currentView = 'vendors';
+var activeId = null;
+var coaParentTarget = null;
+
+var VENDORS = [
+  {id:1,name:'SoCal Equipment Rentals',type:'equipment',contact:'Mike Herrera',email:'rentals@socalequip.com',phone:'(619) 555-1100',address:'2400 Main St, El Cajon CA 92020',eligible1099:'no',billed:'yes',since:'2022',terms:'Net 30',notes:'Primary equipment rental vendor'},
+  {id:2,name:'SafeAir Environmental',type:'subcontractor',contact:'Luis Paz',email:'luis@safeair.com',phone:'(760) 555-2200',address:'890 Industrial Blvd, Oceanside CA 92054',eligible1099:'yes',billed:'yes',since:'2021',terms:'Net 15',notes:'Abatement and hazmat'},
+  {id:3,name:'SD Disposal & Recycling',type:'disposal',contact:'Anna Kim',email:'billing@sddisposal.com',phone:'(619) 555-3300',address:'5500 Convoy St, San Diego CA 92111',eligible1099:'no',billed:'yes',since:'2020',terms:'Due on receipt',notes:'Primary dump fees'},
+  {id:4,name:'Pacific Concrete Cutting',type:'subcontractor',contact:'Carlos Reyes',email:'c.reyes@pacificconcrete.com',phone:'(619) 555-4400',address:'1100 Palm Ave, Chula Vista CA 91911',eligible1099:'yes',billed:'yes',since:'2023',terms:'Net 30',notes:'Concrete cutting'},
+  {id:5,name:'ADP Payroll Services',type:'payroll',contact:'ADP Support',email:'support@adp.com',phone:'(800) 225-5237',address:'1 ADP Blvd, Roseland NJ 07068',eligible1099:'no',billed:'yes',since:'2019',terms:'Monthly',notes:'Payroll processing'},
+];
+
+var BILLS = [
+  {id:1,vendorId:1,num:'BILL-001',desc:'Excavator rental May 2026',amount:3200,due:'May 25, 2026',status:'unpaid',date:'May 10, 2026'},
+  {id:2,vendorId:2,num:'BILL-002',desc:'Abatement Harbor Blvd',amount:4800,due:'May 15, 2026',status:'paid',date:'May 1, 2026'},
+  {id:3,vendorId:3,num:'BILL-003',desc:'Dump fees 3 loads',amount:900,due:'May 20, 2026',status:'unpaid',date:'May 8, 2026'},
+  {id:4,vendorId:4,num:'BILL-004',desc:'Concrete cutting Mission Valley',amount:2600,due:'Apr 30, 2026',status:'partial',date:'Apr 15, 2026'},
+  {id:5,vendorId:5,num:'BILL-005',desc:'Payroll fee April',amount:380,due:'May 1, 2026',status:'paid',date:'Apr 25, 2026'},
+];
+
+var CC_ACCTS = [
+  {id:1,name:'Chase Business Credit Card',last4:'4821',limit:25000,used:8420,color:'var(--info)'},
+  {id:2,name:'Amazon Amex',last4:'3377',limit:10000,used:2150,color:'var(--warning)'},
+];
+
+var ACCOUNTS = [
+  {id:'bank',name:'Bank',type:'Bank',level:0,expanded:true},
+  {id:'b1',name:'Chase Business Checking - 7522',type:'Bank',level:1,parent:'bank'},
+  {id:'b2',name:'Chase Business Savings - 2896',type:'Bank',level:1,parent:'bank'},
+  {id:'b3',name:'Tax Savings Account - 9898',type:'Bank',level:1,parent:'bank'},
+  {id:'b4',name:'UBS Savings Account',type:'Bank',level:1,parent:'bank'},
+  {id:'ar',name:'Accounts Receivable',type:'Accounts Receivable',level:0,expanded:false},
+  {id:'ar1',name:'Accounts Receivable',type:'Accounts Receivable',level:1,parent:'ar'},
+  {id:'ar2',name:'Accounts Receivable - Contra',type:'Other Current Asset',level:1,parent:'ar'},
+  {id:'oca',name:'Other Current Assets',type:'Other Current Asset',level:0,expanded:false},
+  {id:'oca1',name:'Inventory Asset',type:'Other Current Asset',level:1,parent:'oca'},
+  {id:'oca2',name:'Loan to Partner - James & Alexis',type:'Other Current Asset',level:1,parent:'oca'},
+  {id:'oca3',name:'Payroll Asset',type:'Other Current Asset',level:1,parent:'oca'},
+  {id:'oca4',name:'Retention Receivable',type:'Other Current Asset',level:1,parent:'oca'},
+  {id:'oca5',name:'Undeposited Funds',type:'Other Current Asset',level:1,parent:'oca'},
+  {id:'fadump',name:'Dumpsters',type:'Fixed Asset',level:0,expanded:false},
+  {id:'fadump1',name:'Dumpster 1 - D1-23',type:'Fixed Asset',level:1,parent:'fadump'},
+  {id:'fadump2',name:'Dumpster 1 - D1-25',type:'Fixed Asset',level:1,parent:'fadump'},
+  {id:'fadump3',name:'Dumpster 2 - D2-25',type:'Fixed Asset',level:1,parent:'fadump'},
+  {id:'fadump4',name:'Dumpster 3 - D3-25',type:'Fixed Asset',level:1,parent:'fadump'},
+  {id:'fadump5',name:'Dumpster 4 - D4-25',type:'Fixed Asset',level:1,parent:'fadump'},
+  {id:'fadump6',name:'Dumpster 5 - D5-25',type:'Fixed Asset',level:1,parent:'fadump'},
+  {id:'fadump7',name:'Accum Depreciation - Dumpsters',type:'Fixed Asset',level:1,parent:'fadump'},
+  {id:'faeq',name:'Equipment',type:'Fixed Asset',level:0,expanded:false},
+  {id:'faeq1',name:'2006 Skyjack Scissor Lift',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq2',name:'2015 CAT Skid Steer Loader',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq3',name:'2022 Viking Breaker',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq4',name:'2023 Interstate West Trailor',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq5',name:'2024 Kubota Excavator',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq6',name:'2024 Kubota Skid Steer',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq7',name:'2025 Hook Lift Rolloffs',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq8',name:'2025 Kubota Mini Excavator',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq9',name:'2025 Kubota Stand Loader',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq10',name:'2025 Striker Breaker',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq11',name:'2025 Ultima 21S-5300 Multilift',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq12',name:'Carson Trailer',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq13',name:'Floor Scraper',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq14',name:'PITMA Trailer',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq15',name:'Roll off Flatbed',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq16',name:'Scissor Lift',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq17',name:'Terminator',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq18',name:'Truck Dump Hoist',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq19',name:'Wells Fargo - Mini Bobcat',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq20',name:'Yard Storage Container',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq21',name:'Yard Storage Container 2',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faeq22',name:'Accum Depreciation - Equipment',type:'Fixed Asset',level:1,parent:'faeq'},
+  {id:'faoff',name:'Office Equipment',type:'Fixed Asset',level:0,expanded:false},
+  {id:'faoff1',name:'Computers',type:'Fixed Asset',level:1,parent:'faoff'},
+  {id:'faoff2',name:'Accum Depreciation - Office Eq',type:'Fixed Asset',level:1,parent:'faoff'},
+  {id:'faveh',name:'Vehicles & Trucks',type:'Fixed Asset',level:0,expanded:false},
+  {id:'faveh1',name:'2005 Freightliner FL70',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh2',name:'2012 AutoCar Dump Truck',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh3',name:'2015 Chevy Colorado',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh4',name:'2015 Ford F550',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh5',name:'2015 Freightline M2',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh6',name:'2016 Western Star Truck',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh7',name:'2018 Ford F250',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh8',name:'2018 Ram 2500',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh9',name:'2022 Ford F650 Truck',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh10',name:'2023 Ford F-350 XL',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'faveh11',name:'Accum Depreciation - Vehicles',type:'Fixed Asset',level:1,parent:'faveh'},
+  {id:'ap',name:'Accounts Payable',type:'Accounts Payable',level:0,expanded:true},
+  {id:'ap1',name:'Accounts Payable',type:'Accounts Payable',level:1,parent:'ap'},
+  {id:'ccg',name:'Credit Cards',type:'Credit Card',level:0,expanded:true},
+  {id:'cc1',name:'Amazon Amex',type:'Credit Card',level:1,parent:'ccg'},
+  {id:'cc2',name:'Chase Business Credit Card',type:'Credit Card',level:1,parent:'ccg'},
+  {id:'ocl',name:'Other Current Liabilities',type:'Other Current Liability',level:0,expanded:false},
+  {id:'ocl1',name:'Customer Deposits Received',type:'Other Current Liability',level:1,parent:'ocl'},
+  {id:'ocl2',name:'Payroll Liabilities',type:'Other Current Liability',level:1,parent:'ocl'},
+  {id:'ocl3',name:'Sheffield Loan',type:'Other Current Liability',level:1,parent:'ocl'},
+  {id:'ocl4',name:'Suspense',type:'Other Current Liability',level:1,parent:'ocl'},
+  {id:'ltl',name:'Long Term Liabilities',type:'Long Term Liability',level:0,expanded:false},
+  {id:'ltl1',name:'2015 Cat Financial Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl2',name:'2018 Ram 2500 Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl3',name:'2024 Kubota Excavator Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl4',name:'2024 Kubota Skid Steer Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl5',name:'2025 Kubota Mini Excavator Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl6',name:'2025 Kubota Stand Loader Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl7',name:'AutoCar Dump Truck Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl8',name:'Breaker - Wells Fargo Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl9',name:'Ford F350 Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl10',name:'Ford F650 Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'ltl11',name:'Mini Bobcat - Wells Fargo Loan',type:'Long Term Liability',level:1,parent:'ltl'},
+  {id:'eq',name:'Equity',type:'Equity',level:0,expanded:true},
+  {id:'eq1',name:'Opening Balance Equity',type:'Equity',level:1,parent:'eq'},
+  {id:'eq2',name:"Owner's Draws",type:'Equity',level:1,parent:'eq'},
+  {id:'eq3',name:"Owner's Investment",type:'Equity',level:1,parent:'eq'},
+  {id:'eq4',name:'Retained Earnings',type:'Equity',level:1,parent:'eq'},
+  {id:'inc',name:'Income',type:'Income',level:0,expanded:true},
+  {id:'inc1',name:'Job Income',type:'Income',level:1,parent:'inc',expanded:true},
+  {id:'inc1a',name:'Dumpster Income',type:'Income',level:2,parent:'inc1'},
+  {id:'inc1b',name:'Grading',type:'Income',level:2,parent:'inc1'},
+  {id:'inc1c',name:'Welding Income',type:'Income',level:2,parent:'inc1'},
+  {id:'inc2',name:'Recycle Income',type:'Income',level:1,parent:'inc'},
+  {id:'inc3',name:'Refunds',type:'Income',level:1,parent:'inc'},
+  {id:'inc4',name:'Rental Income',type:'Income',level:1,parent:'inc'},
+  {id:'inc5',name:'Uncategorized Income',type:'Income',level:1,parent:'inc'},
+  {id:'cogs',name:'Cost of Goods Sold',type:'Cost of Goods Sold',level:0,expanded:true},
+  {id:'cogs1',name:'Cost of Goods Sold',type:'Cost of Goods Sold',level:1,parent:'cogs'},
+  {id:'cogs2',name:'Dump Fees',type:'Cost of Goods Sold',level:1,parent:'cogs'},
+  {id:'cogs3',name:'Equipment Rental for Jobs',type:'Cost of Goods Sold',level:1,parent:'cogs'},
+  {id:'cogs4',name:'Hazmat Testing',type:'Cost of Goods Sold',level:1,parent:'cogs'},
+  {id:'cogs5',name:'Job Related Costs',type:'Cost of Goods Sold',level:1,parent:'cogs',expanded:true},
+  {id:'cogs5a',name:'Testing',type:'Cost of Goods Sold',level:2,parent:'cogs5'},
+  {id:'cogs6',name:'Labor',type:'Cost of Goods Sold',level:1,parent:'cogs',expanded:true},
+  {id:'cogs6a',name:'Temp Labor',type:'Cost of Goods Sold',level:2,parent:'cogs6'},
+  {id:'cogs7',name:'Other Job Related Costs',type:'Cost of Goods Sold',level:1,parent:'cogs'},
+  {id:'cogs8',name:'Permitting Agency',type:'Cost of Goods Sold',level:1,parent:'cogs'},
+  {id:'cogs9',name:'Subcontractors Expense',type:'Cost of Goods Sold',level:1,parent:'cogs',expanded:true},
+  {id:'cogs9a',name:'Abatement',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9b',name:'Concrete Cutting',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9c',name:'Concrete Pouring',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9d',name:'Electrical',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9e',name:'Fabrication',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9f',name:'Grading',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9g',name:'Landscape',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9h',name:'Trucking',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs9i',name:'Welding & Fabrication',type:'Cost of Goods Sold',level:2,parent:'cogs9'},
+  {id:'cogs10',name:'Tools and Job Supplies',type:'Cost of Goods Sold',level:1,parent:'cogs'},
+  {id:'exp',name:'Expenses',type:'Expense',level:0,expanded:false},
+  {id:'exp1',name:'Auto and Equipment Expense',type:'Expense',level:1,parent:'exp',expanded:false},
+  {id:'exp1a',name:'Gas',type:'Expense',level:2,parent:'exp1'},
+  {id:'exp1b',name:'Maintenance',type:'Expense',level:2,parent:'exp1'},
+  {id:'exp1c',name:'Parking & Tolls',type:'Expense',level:2,parent:'exp1'},
+  {id:'exp1d',name:'Repairs',type:'Expense',level:2,parent:'exp1'},
+  {id:'exp1e',name:'Vehichle Rental Expense',type:'Expense',level:2,parent:'exp1'},
+  {id:'exp1f',name:'Vehicle Registration',type:'Expense',level:2,parent:'exp1'},
+  {id:'exp2',name:'Bad Debt',type:'Expense',level:1,parent:'exp'},
+  {id:'exp3',name:'Bank Service Charges',type:'Expense',level:1,parent:'exp',expanded:false},
+  {id:'exp3a',name:'Credit Card Fees',type:'Expense',level:2,parent:'exp3'},
+  {id:'exp3b',name:'Foreign Exchange Fees',type:'Expense',level:2,parent:'exp3'},
+  {id:'exp3c',name:'Late Fees',type:'Expense',level:2,parent:'exp3'},
+  {id:'exp3d',name:'Merchant Deposit Fees',type:'Expense',level:2,parent:'exp3'},
+  {id:'exp3e',name:'Transaction Fee',type:'Expense',level:2,parent:'exp3'},
+  {id:'exp4',name:'Bonuses',type:'Expense',level:1,parent:'exp'},
+  {id:'exp5',name:'Charitable Donations',type:'Expense',level:1,parent:'exp'},
+  {id:'exp6',name:'Collections Fees',type:'Expense',level:1,parent:'exp'},
+  {id:'exp7',name:'Compliance',type:'Expense',level:1,parent:'exp',expanded:false},
+  {id:'exp7a',name:'Fines & Penalties',type:'Expense',level:2,parent:'exp7'},
+  {id:'exp8',name:'Computer and Internet Expenses',type:'Expense',level:1,parent:'exp'},
+  {id:'exp9',name:'Contract Labor Trucking',type:'Expense',level:1,parent:'exp'},
+  {id:'exp10',name:'Credit Card Payment',type:'Expense',level:1,parent:'exp'},
+  {id:'exp11',name:'Depreciation Expense',type:'Expense',level:1,parent:'exp'},
+  {id:'exp12',name:'Incidental Expense',type:'Expense',level:1,parent:'exp'},
+  {id:'exp13',name:'Insurance Expense',type:'Expense',level:1,parent:'exp',expanded:false},
+  {id:'exp13a',name:'Auto Insurance',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13b',name:'Equipment Insurance',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13c',name:'GL Insurance',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13d',name:'Health Care',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13e',name:'Insurance Bond',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13f',name:'International Auto Insurance',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13g',name:'Key Person Insurance',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13h',name:'Life Insurance',type:'Expense',level:2,parent:'exp13'},
+  {id:'exp13i',name:"Worker's Compensation",type:'Expense',level:2,parent:'exp13'},
+  {id:'exp14',name:'Interest Expense',type:'Expense',level:1,parent:'exp'},
+  {id:'exp15',name:'International Exchange',type:'Expense',level:1,parent:'exp'},
+  {id:'exp16',name:'Jobsite Materials',type:'Expense',level:1,parent:'exp'},
+  {id:'exp17',name:'Marketing',type:'Expense',level:1,parent:'exp'},
+  {id:'exp18',name:'Meals and Entertainment',type:'Expense',level:1,parent:'exp'},
+  {id:'exp19',name:'Office',type:'Expense',level:1,parent:'exp',expanded:false},
+  {id:'exp19a',name:'Office Subscriptions',type:'Expense',level:2,parent:'exp19'},
+  {id:'exp19b',name:'Office Supplies',type:'Expense',level:2,parent:'exp19'},
+  {id:'exp19c',name:'Postage & Delivery',type:'Expense',level:2,parent:'exp19'},
+  {id:'exp19d',name:'Virtual Office',type:'Expense',level:2,parent:'exp19'},
+  {id:'exp20',name:'Payroll Expenses',type:'Expense',level:1,parent:'exp',expanded:false},
+  {id:'exp20a',name:'ADP 401K Employee Contribute',type:'Expense',level:2,parent:'exp20'},
+  {id:'exp20b',name:'ADP Management 401k',type:'Expense',level:2,parent:'exp20'},
+  {id:'exp20c',name:'ADP Payroll Fees',type:'Expense',level:2,parent:'exp20'},
+  {id:'exp20d',name:'Payroll',type:'Expense',level:2,parent:'exp20'},
+  {id:'exp20e',name:'Payroll Tax',type:'Expense',level:2,parent:'exp20'},
+  {id:'exp21',name:'Permit and Licenses',type:'Expense',level:1,parent:'exp'},
+  {id:'exp22',name:'Professional Fees',type:'Expense',level:1,parent:'exp'},
+  {id:'exp23',name:'Promotional',type:'Expense',level:1,parent:'exp'},
+  {id:'exp24',name:'Reimbursment',type:'Expense',level:1,parent:'exp',expanded:false},
+  {id:'exp24a',name:'Auto Insurance Reimbursement',type:'Expense',level:2,parent:'exp24'},
+  {id:'exp24b',name:'Medical Reimbursment',type:'Expense',level:2,parent:'exp24'},
+  {id:'exp24c',name:'Vehicle Reimbursement',type:'Expense',level:2,parent:'exp24'},
+  {id:'exp25',name:'Rent Expense',type:'Expense',level:1,parent:'exp'},
+  {id:'exp26',name:'Safety & Protection',type:'Expense',level:1,parent:'exp'},
+  {id:'exp27',name:'Sales Tax',type:'Expense',level:1,parent:'exp'},
+  {id:'exp28',name:'Telephone Expense',type:'Expense',level:1,parent:'exp'},
+  {id:'exp29',name:'Tolls',type:'Expense',level:1,parent:'exp'},
+  {id:'exp30',name:'Travel Expense',type:'Expense',level:1,parent:'exp'},
+  {id:'exp31',name:'Uncategorized Expenses',type:'Expense',level:1,parent:'exp'},
+  {id:'exp32',name:'Uniforms',type:'Expense',level:1,parent:'exp'},
+  {id:'exp33',name:'Utilities',type:'Expense',level:1,parent:'exp'},
+  {id:'exp34',name:'Website',type:'Expense',level:1,parent:'exp'},
+  {id:'oinc',name:'Other Income',type:'Other Income',level:0,expanded:false},
+  {id:'oinc1',name:'Dividend Income',type:'Other Income',level:1,parent:'oinc'},
+  {id:'oinc2',name:'Gain on Sale of Asset',type:'Other Income',level:1,parent:'oinc'},
+  {id:'oinc3',name:'Interest Earned',type:'Other Income',level:1,parent:'oinc'},
+  {id:'oinc4',name:'Rewards Points',type:'Other Income',level:1,parent:'oinc'},
+  {id:'oexp',name:'Other Expense',type:'Other Expense',level:0,expanded:false},
+  {id:'oexp1',name:'Ask My Accountant',type:'Other Expense',level:1,parent:'oexp'},
+  {id:'oexp2',name:'Other Expense',type:'Other Expense',level:1,parent:'oexp'},
+  {id:'oexp3',name:'Tax Payment',type:'Other Expense',level:1,parent:'oexp'},
+  {id:'np',name:'Non-Posting',type:'Non-Posting',level:0,expanded:false},
+  {id:'np1',name:'Estimates',type:'Non-Posting',level:1,parent:'np'},
+  {id:'np2',name:'Purchase Orders',type:'Non-Posting',level:1,parent:'np'},
+  {id:'np3',name:'Sales Orders',type:'Non-Posting',level:1,parent:'np'},
+];
+
+function fmt(n){ return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function flash(msg,col){ var e=document.createElement('div'); e.style.cssText='position:fixed;bottom:24px;right:24px;background:'+(col||'var(--success)')+';color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;'; e.textContent=msg; document.body.appendChild(e); setTimeout(function(){e.remove();},3000); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+function setView(v){
+  currentView=v; activeId=null;
+  var map={vendors:'btnVendors',bills:'btnBills',cc:'btnCC',recon:'btnRecon',coa:'btnCOA'};
+  Object.keys(map).forEach(function(k){ var el=document.getElementById(map[k]); if(el) el.classList.toggle('active',k===v); });
+  var labels={vendors:'New vendor',bills:'New bill',cc:'Add card',recon:'Import statement',coa:'New account'};
+  var lbl=document.getElementById('addBtnLabel'); if(lbl) lbl.textContent=labels[v]||'Add';
+  var si=document.getElementById('searchInput'); if(si) si.value='';
+  var lp=document.getElementById('leftPanel');
+  if(v==='coa'){ if(lp) lp.style.display='none'; renderCOAView(); }
+  else { if(lp) lp.style.display=''; renderLeft(''); renderEmptyRight(); }
+}
+
+function renderLeft(q){
+  var el=document.getElementById('leftList'); if(!el) return;
+  var lq=(q||'').toLowerCase();
+  if(currentView==='vendors') el.innerHTML=buildVendorList(lq);
+  else if(currentView==='bills') el.innerHTML=buildBillList(lq);
+  else if(currentView==='cc') el.innerHTML=buildCCList();
+  else el.innerHTML='<div style="padding:20px;color:var(--muted2);text-align:center;">Import a bank statement to begin</div>';
+}
+
+function renderEmptyRight(){
+  var pr=document.getElementById('panelRight');
+  var labels={vendors:'Select a vendor',bills:'Select a bill',cc:'Select a card',recon:'Select an entry'};
+  pr.innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;opacity:.25;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>'+(labels[currentView]||'Select item')+'</span></div>';
+}
+
+function buildVendorList(q){
+  var filtered=VENDORS.filter(function(v){ return !q||v.name.toLowerCase().includes(q)||v.type.includes(q); });
+  if(!filtered.length) return '<div style="padding:20px;color:var(--muted2);text-align:center;">No vendors found</div>';
+  return filtered.map(function(v){
+    var bills=BILLS.filter(function(b){return b.vendorId===v.id;});
+    var owed=bills.filter(function(b){return b.status!=='paid';}).reduce(function(s,b){return s+b.amount;},0);
+    return '<div class="list-item'+(activeId===v.id?' active':'')+'" onclick="selectVendor('+v.id+')">'
+      +'<div class="li-top"><div class="li-name">'+v.name+'</div>'+(owed>0?'<div class="li-amt">'+fmt(owed)+'</div>':'')+'</div>'
+      +'<div class="li-sub">'+(v.type.charAt(0).toUpperCase()+v.type.slice(1))+(v.eligible1099==='yes'?' &nbsp;&#183;&nbsp; <span style="color:var(--warning);">1099</span>':'')+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function buildBillList(q){
+  var filtered=BILLS.filter(function(b){ var v=VENDORS.find(function(x){return x.id===b.vendorId;}); return !q||(v&&v.name.toLowerCase().includes(q))||b.desc.toLowerCase().includes(q); });
+  if(!filtered.length) return '<div style="padding:20px;color:var(--muted2);text-align:center;">No bills</div>';
+  return filtered.map(function(b){
+    var v=VENDORS.find(function(x){return x.id===b.vendorId;})||{name:'Unknown'};
+    var pc=b.status==='paid'?'pill-paid':b.status==='partial'?'pill-partial':'pill-unpaid';
+    return '<div class="list-item">'
+      +'<div class="li-top"><div class="li-name">'+b.num+'</div><div class="li-amt">'+fmt(b.amount)+'</div></div>'
+      +'<div class="li-sub">'+v.name+'</div>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:5px;"><span style="font-size:11px;color:var(--muted2);">Due: '+b.due+'</span><span class="pill '+pc+'">'+b.status+'</span></div>'
+      +'</div>';
+  }).join('');
+}
+
+function buildCCList(){
+  return CC_ACCTS.map(function(c){
+    var pct=Math.round(c.used/c.limit*100);
+    return '<div class="list-item">'
+      +'<div class="li-top"><div class="li-name">'+c.name+'</div><div style="font-size:12px;color:var(--muted);">&#183;&#183;&#183;'+c.last4+'</div></div>'
+      +'<div style="margin:8px 0 4px;"><div style="height:6px;border-radius:3px;background:var(--surface3);"><div style="height:100%;border-radius:3px;background:'+c.color+';width:'+pct+'%;"></div></div></div>'
+      +'<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);"><span>'+fmt(c.used)+' used</span><span>'+pct+'% of '+fmt(c.limit)+'</span></div>'
+      +'</div>';
+  }).join('');
+}
+
+function selectVendor(id){
+  activeId=id;
+  var v=VENDORS.find(function(x){return x.id===id;}); if(!v) return;
+  renderLeft('');
+  var vb=BILLS.filter(function(b){return b.vendorId===id;});
+  var owed=vb.filter(function(b){return b.status!=='paid';}).reduce(function(s,b){return s+b.amount;},0);
+  var pr=document.getElementById('panelRight');
+  pr.innerHTML='<div class="detail-wrap">'
+    +'<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+    +'<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-size:26px;font-weight:700;">'+v.name+'</div>'
+    +'<div style="font-size:13px;color:var(--muted);margin-top:4px;">'+(v.type.charAt(0).toUpperCase()+v.type.slice(1))+' &#183; Since '+(v.since||'&#8212;')+'</div>'
+    +'<div style="margin-top:8px;display:flex;gap:8px;">'
+    +(v.eligible1099==='yes'?'<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(200,130,42,.12);color:var(--warning);">1099 Eligible</span>':'')
+    +(v.billed==='yes'?'<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(58,126,212,.1);color:var(--info);">Billed Vendor</span>':'')
+    +'</div></div>'
+    +'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Amount owed</div><div style="font-size:28px;font-weight:700;color:'+(owed>0?'var(--danger)':'var(--success)')+';">'+fmt(owed)+'</div></div>'
+    +'</div></div>'
+    +'<div class="card"><div class="card-title">Contact &amp; details</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Contact</div><div style="font-size:14px;font-weight:600;">'+(v.contact||'&#8212;')+'</div></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Phone</div><div style="font-size:14px;">'+(v.phone||'&#8212;')+'</div></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Email</div><div style="font-size:14px;">'+(v.email||'&#8212;')+'</div></div>'
+    +'<div><div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Terms</div><div style="font-size:14px;">'+(v.terms||'&#8212;')+'</div></div>'
+    +'<div style="grid-column:span 2;"><div style="font-size:10px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Address</div><div style="font-size:14px;">'+(v.address||'&#8212;')+'</div></div>'
+    +'</div></div>'
+    +'<div class="card"><div class="card-title">Bills ('+vb.length+')<button class="btn btn-ghost btn-sm">+ New bill</button></div>'
+    +(vb.length?'<table><thead><tr><th>Bill #</th><th>Description</th><th>Date</th><th>Due</th><th>Status</th><th style="text-align:right;">Amount</th></tr></thead><tbody>'
+      +vb.map(function(b){ var pc=b.status==='paid'?'pill-paid':b.status==='partial'?'pill-partial':'pill-unpaid'; return '<tr><td style="font-weight:600;">'+b.num+'</td><td>'+b.desc+'</td><td style="color:var(--muted);">'+b.date+'</td><td style="color:var(--muted);">'+b.due+'</td><td><span class="pill '+pc+'">'+b.status+'</span></td><td style="text-align:right;font-weight:600;">'+fmt(b.amount)+'</td></tr>'; }).join('')
+      +'</tbody></table>':'<div style="color:var(--muted2);font-style:italic;font-size:13px;">No bills for this vendor</div>')
+    +'</div></div>';
+}
+
+// ── COA ──
+function coaTypeClass(t){
+  var m={'Bank':'cb-bank','Accounts Receivable':'cb-asset','Other Current Asset':'cb-asset','Fixed Asset':'cb-asset','Accounts Payable':'cb-ap','Credit Card':'cb-cc','Other Current Liability':'cb-liability','Long Term Liability':'cb-liability','Equity':'cb-equity','Income':'cb-income','Cost of Goods Sold':'cb-cogs','Expense':'cb-expense','Other Income':'cb-income','Other Expense':'cb-expense','Non-Posting':'cb-other'};
+  return m[t]||'cb-other';
+}
+
+function coaVisible(acc){
+  if(acc.level===0) return true;
+  var p=ACCOUNTS.find(function(a){return a.id===acc.parent;});
+  if(!p) return true;
+  if(!p.expanded) return false;
+  return p.level===0 ? true : coaVisible(p);
+}
+
+function coaToggle(id){
+  var acc=ACCOUNTS.find(function(a){return a.id===id;});
+  if(acc) acc.expanded=!acc.expanded;
+  refreshCOATable();
+}
+
+function refreshCOATable(){
+  var tbody=document.getElementById('coaTbody'); if(!tbody) return;
+  var si=document.getElementById('coaSearchInput'); var q=si?si.value.toLowerCase():'';
+  var rows='';
+  ACCOUNTS.forEach(function(acc){
+    if(!coaVisible(acc)) return;
+    if(q&&!acc.name.toLowerCase().includes(q)&&!acc.type.toLowerCase().includes(q)) return;
+    var hasKids=ACCOUNTS.some(function(a){return a.parent===acc.id;});
+    var pad=16+acc.level*20;
+    var expHtml=hasKids?('<button class="exp-btn" data-id="'+acc.id+'">'+(acc.expanded?'&#9662;':'&#9658;')+'</button>'):'<span style="display:inline-block;width:22px;"></span>';
+    var wt = acc.level===0 ? 'font-weight:700;' : (acc.level===1 ? 'font-weight:500;' : 'font-weight:400;color:var(--muted);');
+    rows += '<tr class="coa-row lvl' + acc.level + '">'
+      + '<td style="padding-left:' + pad + 'px;">' + expHtml + '<span style="' + wt + '">' + acc.name + '</span></td>'
+      +'<td><span class="coa-badge '+coaTypeClass(acc.type)+'">'+acc.type+'</span></td>'
+      +'<td style="color:var(--muted);">$0.00</td>'
+      +'<td><button class="sub-btn" data-pid="'+acc.id+'">+ Sub-account</button></td>'
+      +'</tr>';
+  });
+  tbody.innerHTML=rows;
+  // Wire buttons
+  tbody.querySelectorAll('.exp-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();coaToggle(this.dataset.id);});
+  });
+  tbody.querySelectorAll('.sub-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){e.stopPropagation();openCOAModal(this.dataset.pid);});
+  });
+}
+
+function renderCOAView(){
+  var pr=document.getElementById('panelRight'); if(!pr) return;
+  pr.style.overflow='hidden';
+  pr.innerHTML='<div class="coa-wrap">'
+    +'<div class="coa-bar">'
+    +'<div class="coa-search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;color:var(--muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    +'<input type="text" id="coaSearchInput" placeholder="Search accounts..." oninput="refreshCOATable()"></div>'
+    +'<div style="display:flex;gap:8px;align-items:center;">'
+    +'<span style="font-size:13px;color:var(--muted);">'+ACCOUNTS.length+' accounts &nbsp;&#183;&nbsp; All balances $0.00</span>'
+    +'<button class="btn btn-ghost btn-sm" onclick="ACCOUNTS.forEach(function(a){a.expanded=true;});refreshCOATable();">Expand all</button>'
+    +'<button class="btn btn-ghost btn-sm" onclick="ACCOUNTS.forEach(function(a){if(a.level===0)a.expanded=false;});refreshCOATable();">Collapse</button>'
+    +'</div></div>'
+    +'<div class="coa-tbl-wrap"><table class="coa-tbl">'
+    +'<thead><tr><th style="width:48%;">Account name</th><th style="width:24%;">Type</th><th style="width:14%;">Balance</th><th style="width:14%;text-align:right;"></th></tr></thead>'
+    +'<tbody id="coaTbody"></tbody>'
+    +'</table></div></div>';
+  refreshCOATable();
+}
+
+function openCOAModal(parentId){
+  coaParentTarget=parentId||null;
+  var pa=parentId?ACCOUNTS.find(function(a){return a.id===parentId;}):null;
+  document.getElementById('coaModalTitle').textContent=pa?'Add sub-account \u2014 '+pa.name:'New account';
+  document.getElementById('coa_name').value='';
+  document.getElementById('coa_type').value=pa?pa.type:'Expense';
+  var sel=document.getElementById('coa_parent');
+  sel.innerHTML='<option value="">\u2014 Top level \u2014</option>';
+  ACCOUNTS.filter(function(a){return a.level<=1;}).forEach(function(a){
+    var opt=document.createElement('option');
+    opt.value=a.id;
+    opt.textContent=(a.level===1?'\u2014 ':'')+a.name;
+    if(a.id===parentId) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  document.getElementById('coaModal').classList.add('open');
+}
+
+function saveCOAAccount(){
+  var name=document.getElementById('coa_name').value.trim();
+  if(!name){document.getElementById('coa_name').style.borderColor='var(--danger)';return;}
+  var type=document.getElementById('coa_type').value;
+  var pid=document.getElementById('coa_parent').value||null;
+  var pa=pid?ACCOUNTS.find(function(a){return a.id===pid;}):null;
+  ACCOUNTS.push({id:'acc_'+Date.now(),name:name,type:type,level:pa?(pa.level+1):0,parent:pid||undefined,expanded:false});
+  closeModal('coaModal');
+  refreshCOATable();
+  flash('Account "'+name+'" created');
+}
+
+function saveVendor(){
+  var name=document.getElementById('v_name').value.trim(); if(!name) return;
+  var newId=VENDORS.reduce(function(m,v){return Math.max(m,v.id);},0)+1;
+  VENDORS.push({id:newId,name:name,type:document.getElementById('v_type').value,
+    eligible1099:document.getElementById('v_1099').value,billed:document.getElementById('v_billed').value,
+    contact:document.getElementById('v_contact').value,phone:document.getElementById('v_phone').value,
+    email:document.getElementById('v_email').value,since:new Date().getFullYear().toString(),terms:'Net 30',notes:''});
+  closeModal('vendorModal');
+  renderLeft('');
+  flash('Vendor "'+name+'" added');
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('addBtn').addEventListener('click',function(){
+    if(currentView==='coa') openCOAModal(null);
+    else document.getElementById('vendorModal').classList.add('open');
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){closeModal('vendorModal');closeModal('coaModal');}
+  });
+  document.getElementById('vendorModal').addEventListener('click',function(e){if(e.target===this)closeModal('vendorModal');});
+  document.getElementById('coaModal').addEventListener('click',function(e){if(e.target===this)closeModal('coaModal');});
+  setView('vendors');
+});
+</script>
+</body>
+</html>

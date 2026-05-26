@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDD — Invoices</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#B8922A;--gold-light:#C9A84C;--gold-dim:rgba(184,146,42,0.12);--gold-dim2:rgba(184,146,42,0.07);
+  --black:#1A1A1A;--surface:#FFFFFF;--surface2:#F5F4F1;--surface3:#ECEAE5;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#1A1A1A;--muted:#777;--muted2:#AAA;
+  --danger:#D94F4F;--success:#3A9E6A;--warning:#C8822A;--info:#3A7ED4;
+}
+body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;min-height:100vh;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-svg .s-bar{fill:var(--gold);}.logo-svg .letters{fill:#1A1A1A;}
+.logo-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+.nav{display:flex;gap:4px;}
+.nav-item{padding:6px 14px;border-radius:6px;font-size:13px;color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;text-decoration:none;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);}
+.nav-item svg{width:15px;height:15px;opacity:.7;}
+.btn{padding:7px 16px;border-radius:6px;font-size:13px;font-family:'Barlow',sans-serif;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-gold{background:var(--gold);color:#fff;font-weight:600;}
+.btn-gold:hover{background:var(--gold-light);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn-success{background:rgba(58,158,106,.12);color:var(--success);border:1px solid rgba(58,158,106,.25);}
+.btn-danger{background:rgba(217,79,79,.1);color:var(--danger);border:1px solid rgba(217,79,79,.2);}
+.btn-info{background:rgba(58,126,212,.1);color:var(--info);border:1px solid rgba(58,126,212,.2);}
+
+/* LAYOUT */
+.app{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px);}
+
+/* LEFT */
+.panel-left{width:310px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.panel-left-header{padding:14px 16px;border-bottom:1px solid var(--border);}
+.search-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;flex:1;}
+.search-box input::placeholder{color:var(--muted2);}
+.inv-list{overflow-y:auto;flex:1;}
+.inv-list::-webkit-scrollbar{width:4px;}
+.inv-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px;}
+
+/* GROUP HEADERS */
+.group-hdr{padding:10px 16px 5px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:2;border-bottom:1px solid var(--border);}
+.group-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:7px;}
+.group-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.group-count{font-size:10px;padding:1px 7px;border-radius:20px;background:var(--surface3);color:var(--muted);}
+.group-amt{font-size:11px;font-weight:600;color:var(--muted);}
+
+/* INVOICE LIST ITEM */
+.inv-item{padding:13px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:all .15s;}
+.inv-item:hover{background:var(--surface2);}
+.inv-item.active{background:var(--gold-dim2);border-left:2px solid var(--gold);}
+.ii-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;}
+.ii-num{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--muted);}
+.ii-amt{font-size:13px;font-weight:700;color:var(--text);}
+.ii-customer{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.ii-addr{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ii-bottom{display:flex;justify-content:space-between;margin-top:7px;align-items:center;}
+.ii-date{font-size:11px;color:var(--muted2);}
+.ii-balance{font-size:11px;font-weight:600;}
+
+/* PILLS */
+.pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:600;white-space:nowrap;}
+.pill-draft{background:var(--surface3);color:var(--muted);}
+.pill-sent{background:rgba(58,126,212,.12);color:var(--info);}
+.pill-partial{background:rgba(200,130,42,.12);color:var(--warning);}
+.pill-paid{background:rgba(58,158,106,.12);color:var(--success);}
+.pill-overdue{background:rgba(217,79,79,.12);color:var(--danger);}
+
+/* RIGHT */
+.panel-right{flex:1;overflow-y:auto;background:#F0EEE9;}
+.panel-right::-webkit-scrollbar{width:6px;}
+.panel-right::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
+.empty-state{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);}
+.empty-state svg{width:40px;height:40px;opacity:.25;}
+
+/* DETAIL */
+.detail-wrap{padding:24px 28px;}
+.card{background:var(--surface);border-radius:12px;padding:20px 24px;margin-bottom:16px;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+
+/* INVOICE HEADER CARD */
+.inv-header-card{background:var(--surface);border-radius:12px;padding:24px;margin-bottom:16px;}
+.ih-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.ih-num{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.ih-customer{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;}
+.ih-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--muted);}
+.ih-meta span{display:flex;align-items:center;gap:4px;}
+.ih-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;}
+
+/* REFERENCE ROW */
+.ref-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:20px;}
+.ref-box{}
+.ref-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);margin-bottom:4px;}
+.ref-val{font-size:13px;font-weight:600;color:var(--text);}
+.ref-val.po{color:var(--info);}
+.ref-val.highlight{color:var(--gold);}
+
+/* LINE ITEMS */
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.04em;padding:7px 8px;border-bottom:1px solid var(--border);}
+td{padding:9px 8px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+.col-desc{width:44%;}
+.col-qty{width:10%;text-align:right;}
+.col-unit{width:10%;text-align:right;color:var(--muted);}
+.col-price{width:14%;text-align:right;}
+.col-total{width:14%;text-align:right;font-weight:600;}
+.alt-tag{font-size:10px;padding:1px 7px;border-radius:20px;background:rgba(184,146,42,.1);color:var(--gold);font-weight:600;margin-left:6px;}
+
+/* TOTALS */
+.totals-box{background:var(--surface2);border-radius:8px;padding:16px 18px;margin-top:12px;}
+.tot-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--muted);}
+.tot-row.grand{font-size:17px;font-weight:700;color:var(--text);padding-top:12px;margin-top:8px;border-top:1px solid var(--border2);}
+.tot-row.paid-line{color:var(--success);}
+.tot-row.balance-line{font-size:15px;font-weight:700;color:var(--danger);}
+
+/* PAYMENT PROGRESS */
+.pay-bar-wrap{margin:14px 0 6px;}
+.pay-bar-track{height:8px;border-radius:4px;background:var(--surface3);overflow:hidden;}
+.pay-bar-fill{height:100%;border-radius:4px;background:var(--success);transition:width .4s;}
+.pay-pct{font-size:11px;color:var(--muted);margin-top:5px;}
+
+/* PAYMENT HISTORY */
+.pay-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);}
+.pay-row:last-child{border-bottom:none;}
+.pay-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pi-card{background:rgba(58,126,212,.1);color:var(--info);}
+.pi-ach{background:rgba(58,158,106,.1);color:var(--success);}
+.pi-check{background:rgba(200,130,42,.1);color:var(--warning);}
+.pay-info{flex:1;}
+.pay-method{font-size:13px;font-weight:600;}
+.pay-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+.pay-amt{font-size:14px;font-weight:700;color:var(--success);}
+
+/* WAIVER SECTION */
+.waiver-row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:8px;margin-bottom:8px;}
+.waiver-row.conditional{background:rgba(200,130,42,.08);border:1px solid rgba(200,130,42,.2);}
+.waiver-row.unconditional{background:rgba(58,158,106,.08);border:1px solid rgba(58,158,106,.2);}
+.waiver-row.pending{background:var(--surface2);border:1px solid var(--border2);}
+.waiver-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.wi-cond{background:rgba(200,130,42,.15);color:var(--warning);}
+.wi-uncond{background:rgba(58,158,106,.15);color:var(--success);}
+.wi-pending{background:var(--surface3);color:var(--muted);}
+.waiver-info{flex:1;}
+.waiver-title{font-size:13px;font-weight:600;}
+.waiver-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border-radius:10px;padding:14px 16px;}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px;}
+.stat-val{font-size:21px;font-weight:700;color:var(--text);}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.info-box{background:var(--surface2);border-radius:8px;padding:11px 14px;}
+.info-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);margin-bottom:5px;}
+.info-val{font-size:13px;font-weight:600;color:var(--text);}
+.info-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:16px;width:500px;overflow:hidden;}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-body{padding:22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2);}
+.form-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.form-field label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+.form-field input,.form-field select,.form-field textarea{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border .15s;}
+.form-field input:focus,.form-field select:focus{border-color:var(--gold);}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* INVOICE PREVIEW */
+.preview-overlay{display:none;position:fixed;inset:0;background:rgba(240,238,233,.97);z-index:300;overflow-y:auto;}
+.preview-overlay.open{display:block;}
+.preview-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;}
+.preview-body{max-width:760px;margin:0 auto;padding:32px 20px;}
+.preview-doc{background:var(--surface);border-radius:12px;padding:40px 44px;border:1px solid var(--border);}
+
+svg{display:block;}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px){
+  .header{padding:0 14px;height:52px;}
+  .nav{display:none;}
+  .logo-text{display:none;}
+  .app{flex-direction:column;height:auto;overflow:visible;}
+  .panel-left,.panel-right{width:100%;height:auto;border-right:none;}
+  body{font-size:15px;}
+  .btn{font-size:14px;padding:8px 14px;}
+  .btn-sm{font-size:12px;padding:6px 12px;}
+  .detail-wrap{padding:14px 16px;}
+  .card{padding:16px 16px;}
+  table{font-size:13px;}
+  .form-overlay,.modal-overlay{padding:0;align-items:flex-end;}
+  .form-modal,.nc-modal,.modal{border-radius:16px 16px 0 0;max-width:100%;max-height:92vh;}
+  .form-body,.nc-body,.modal-body{max-height:calc(92vh - 140px);}
+  .info-grid,.info-grid-3{grid-template-columns:1fr;}
+  .form-grid,.fg2,.form-grid-3,.fg3,.form-grid-2{grid-template-columns:1fr;}
+  .stats-row,.kpi-grid,.content-grid,.content-grid-3{grid-template-columns:1fr 1fr;}
+  .pipeline-row{grid-template-columns:repeat(3,1fr);}
+  body{padding-bottom:72px;}
+}
+@media (min-width:769px) and (max-width:1024px){
+  .panel-left{width:260px;}
+  .form-modal{max-width:640px;}
+}
+@media (max-width:768px){
+  .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:8px 0 12px;}
+  .mobile-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--muted);text-decoration:none;padding:4px 0;letter-spacing:.02em;}
+  .mobile-nav a.active{color:var(--gold);}
+  .mobile-nav svg{width:22px;height:22px;}
+}
+@media (min-width:769px){.mobile-nav{display:none;}}
+
+
+/* ── PDF PREVIEW ── */
+.pdf-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.pdf-overlay.open{display:flex;}
+.pdf-modal{background:#E8E8E8;border-radius:12px;width:100%;max-width:760px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.3);}
+.pdf-toolbar{background:#3C3C3C;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.pdf-toolbar-title{color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.pdf-page{background:#fff;margin:16px auto;width:680px;min-height:820px;padding:48px 52px;box-shadow:0 4px 20px rgba(0,0,0,.15);font-family:'Barlow',sans-serif;}
+.pdf-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:18px;border-bottom:3px solid #B8922A;}
+.pdf-logo-txt{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:#1A1A1A;}
+.pdf-logo-sub{font-size:12px;color:#777;margin-top:2px;}
+.pdf-doc-label{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:#B8922A;text-align:right;}
+.pdf-doc-num{font-size:15px;color:#444;margin-top:4px;text-align:right;}
+.pdf-bill-row{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:18px;}
+.pdf-bill-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#777;margin-bottom:5px;}
+.pdf-bill-val{font-size:13px;color:#1A1A1A;line-height:1.5;}
+.pdf-address-box{background:#F8F6F2;border-left:3px solid #B8922A;padding:10px 14px;border-radius:0 6px 6px 0;font-size:13px;margin-bottom:16px;}
+.pdf-section-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#777;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #E0E0E0;}
+.pdf-table{width:100%;border-collapse:collapse;}
+.pdf-table th{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#777;padding:8px 10px;border-bottom:2px solid #E0E0E0;text-align:left;}
+.pdf-table th:last-child,.pdf-table td:last-child{text-align:right;}
+.pdf-table td{font-size:13px;padding:10px 10px;border-bottom:1px solid #F0F0F0;}
+.pdf-tot-row{display:flex;justify-content:space-between;padding:6px 10px;font-size:13px;color:#555;border-top:1px solid #E0E0E0;}
+.pdf-tot-grand{display:flex;justify-content:space-between;padding:10px 10px;font-size:16px;font-weight:700;background:#F8F6F2;border-top:2px solid #B8922A;margin-top:4px;}
+.pdf-footer{margin-top:28px;padding-top:14px;border-top:1px solid #E0E0E0;display:flex;justify-content:space-between;font-size:11px;color:#AAA;}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <svg class="logo-svg" viewBox="0 0 120 60" width="56" height="28">
+      <polygon class="s-bar" points="28,8 58,8 42,52 12,52"/>
+      <text x="4" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">S</text>
+      <text x="44" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">DD</text>
+    </svg>
+    <span class="logo-text">Demolition</span>
+  </div>
+  <nav class="nav">
+    <a class="nav-item" href="/index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <a class="nav-item" href="/sdd-customers.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Customers</a>
+    <a class="nav-item" href="/sdd-estimates.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Estimates</a>
+    <a class="nav-item" href="/sdd-jobs.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Jobs</a>
+    <a class="nav-item active" href="/sdd-invoices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Invoices</a>
+    <a class="nav-item" href="/sdd-vendors.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Vendors</a>
+  </nav>
+  <button class="btn btn-gold" onclick="openModal('newInvModal')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New invoice
+  </button>
+</div>
+
+<div class="app">
+  <div class="panel-left">
+    <div class="panel-left-header">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--muted);flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search invoices, PO, customer..." oninput="filterInvoices(this.value)">
+      </div>
+    </div>
+    <div class="inv-list" id="invList"></div>
+  </div>
+
+  <div class="panel-right" id="panelRight">
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Select an invoice to view details</span>
+    </div>
+  </div>
+</div>
+
+<!-- RECORD PAYMENT MODAL -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;">Record payment</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('payModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="payModalInfo" style="background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--muted);"></div>
+      <div class="form-grid-2">
+        <div class="form-field">
+          <label>Payment method</label>
+          <select id="payMethod">
+            <option value="card">Credit card</option>
+            <option value="ach">ACH / bank transfer</option>
+            <option value="check">Check</option>
+            <option value="wire">Wire transfer</option>
+            <option value="cash">Cash</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Amount received</label>
+          <input type="number" id="payAmt" placeholder="0.00">
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-field">
+          <label>Date received</label>
+          <input type="date" id="payDate" value="2026-05-11">
+        </div>
+        <div class="form-field">
+          <label>Reference / check #</label>
+          <input type="text" id="payRef" placeholder="Optional">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Notes</label>
+        <input type="text" placeholder="Optional notes">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('payModal')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmPayment()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Record payment
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SEND WAIVER MODAL -->
+<div class="modal-overlay" id="waiverModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;">Send waiver</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('waiverModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="waiverModalInfo" style="background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--muted);"></div>
+      <div class="form-field">
+        <label>Waiver type</label>
+        <select id="waiverType">
+          <option value="conditional">Conditional waiver — send with invoice</option>
+          <option value="unconditional">Unconditional waiver — send after full payment</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Send to</label>
+        <input type="email" id="waiverEmail" placeholder="billing@client.com">
+      </div>
+      <div class="form-field">
+        <label>Notes</label>
+        <input type="text" placeholder="Optional message to include">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('waiverModal')">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmWaiver()">Send waiver</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW INVOICE MODAL -->
+<div class="modal-overlay" id="newInvModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;">New invoice</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('newInvModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-field">
+        <label>Generate from estimate / Sales Order</label>
+        <select>
+          <option>EST-2026-051 · ABC Construction Corp · 880 5th Ave ($9,850)</option>
+          <option>EST-2026-055 · ABC Construction Corp · 342 Third Ave ($22,500)</option>
+          <option>EST-2026-060 · ABC Construction Corp · Mission Valley Rd ($31,200)</option>
+          <option>— Create manually —</option>
+        </select>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-field">
+          <label>Invoice date</label>
+          <input type="date" value="2026-05-11">
+        </div>
+        <div class="form-field">
+          <label>Due date</label>
+          <input type="date" value="2026-06-10">
+        </div>
+        <div class="form-field">
+          <label>PO Number</label>
+          <input type="text" placeholder="Client PO number if applicable">
+        </div>
+        <div class="form-field">
+          <label>Payment terms</label>
+          <select><option>Net 30</option><option>Net 15</option><option>50% deposit / 50% completion</option><option>Due on receipt</option></select>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Billing contact</label>
+        <select>
+          <option>Maria Rodriguez — billing@abcconstruction.com</option>
+          <option>David Chen — d.chen@horizonbuilders.com</option>
+          <option>Lisa Fontaine — accounts@paccoast.com</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Waiver required</label>
+        <select><option>Conditional waiver</option><option>Unconditional waiver</option><option>No waiver</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('newInvModal')">Cancel</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('newInvModal')">Save draft</button>
+      <button class="btn btn-gold" onclick="closeModal('newInvModal')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send to client
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE PREVIEW -->
+<div class="preview-overlay" id="previewOverlay">
+  <div class="preview-header">
+    <div class="logo">
+      <svg class="logo-svg" viewBox="0 0 120 60" width="48" height="24">
+        <polygon class="s-bar" points="28,8 58,8 42,52 12,52"/>
+        <text x="4" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">S</text>
+        <text x="44" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">DD</text>
+      </svg>
+      <span class="logo-text">Invoice preview</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('previewOverlay');document.getElementById('previewOverlay').classList.remove('open');">✕ Close</button>
+    </div>
+  </div>
+  <div class="preview-body" id="previewBody"></div>
+</div>
+
+<script>
+const INVOICES = [
+  {
+    id:1, num:'INV-2026-018', est:'EST-2026-047', so:'SO-2026-031',
+    customer:'ABC Construction Corp', contact:'James Torres',
+    billingContact:'Maria Rodriguez', billingEmail:'billing@abcconstruction.com',
+    jobAddress:'1420 Harbor Blvd, San Diego CA 92101',
+    companyAddress:'4500 Main St, San Diego CA 92103',
+    jobName:'Harbor Blvd Demo Phase 1',
+    poNumber:'PO-2026-4891',
+    status:'partial',
+    invoiceDate:'May 2, 2026', dueDate:'Jun 1, 2026',
+    subtotal:23150, tax:2025, total:25175,
+    paid:12500, balance:12675,
+    terms:'Progress billing', waiver:'conditional', waiverSent:true, unconditionalSent:false,
+    paymentMethod:'portal',
+    lines:[
+      {desc:'Interior demolition — 2nd floor',qty:'1,800',unit:'sq ft',price:'$5.00',total:'$9,000'},
+      {desc:'Debris removal & hauling',qty:'3',unit:'loads',price:'$900',total:'$2,700'},
+      {desc:'Dumpster rental (7 days)',qty:'1',unit:'unit',price:'$850',total:'$850'},
+      {desc:'Dust protection & containment',qty:'1',unit:'job',price:'$600',total:'$600'},
+      {desc:'Concrete cutting & breaking',qty:'800',unit:'sq ft',price:'$8.00',total:'$6,400',alt:'Alt A'},
+      {desc:'Concrete debris hauling',qty:'4',unit:'loads',price:'$800',total:'$3,200',alt:'Alt A'},
+      {desc:'Surface grading after removal',qty:'800',unit:'sq ft',price:'$1.50',total:'$1,200',alt:'Alt A (partial)'},
+    ],
+    payments:[
+      {method:'card',label:'Credit card',amt:12500,date:'May 6, 2026',ref:'AUTH-4892',icon:'pi-card'},
+    ],
+    timeline:[
+      {action:'Invoice created from EST-2026-047',date:'May 2, 2026',color:'#AAA'},
+      {action:'Sent to billing@abcconstruction.com',date:'May 2, 2026',color:'#3A7ED4'},
+      {action:'Conditional waiver sent',date:'May 2, 2026',color:'#C8822A'},
+      {action:'Payment received — $12,500 (credit card)',date:'May 6, 2026',color:'#3A9E6A'},
+    ]
+  },
+  {
+    id:2, num:'INV-2026-014', est:'EST-2026-038', so:'SO-2026-018',
+    customer:'Horizon Builders LLC', contact:'David Chen',
+    billingContact:'David Chen', billingEmail:'d.chen@horizonbuilders.com',
+    jobAddress:'901 National City Blvd, National City CA 91950',
+    companyAddress:'1200 Broadway, Chula Vista CA 91910',
+    jobName:'National City Full Demo',
+    poNumber:'HB-2026-0038',
+    status:'paid',
+    invoiceDate:'Mar 31, 2026', dueDate:'Apr 30, 2026',
+    subtotal:17200, tax:1505, total:18705,
+    paid:18705, balance:0,
+    terms:'Net 30', waiver:'unconditional', waiverSent:true, unconditionalSent:true,
+    paymentMethod:'ach',
+    lines:[
+      {desc:'Interior & exterior demolition',qty:'4,200',unit:'sq ft',price:'$3.00',total:'$12,600'},
+      {desc:'Full debris hauling — 8 loads',qty:'8',unit:'loads',price:'$500',total:'$4,000'},
+      {desc:'Final site cleanup',qty:'1',unit:'job',price:'$600',total:'$600'},
+    ],
+    payments:[
+      {method:'ach',label:'ACH transfer',amt:9352,date:'Apr 15, 2026',ref:'ACH-20260415',icon:'pi-ach'},
+      {method:'ach',label:'ACH transfer',amt:9353,date:'Apr 28, 2026',ref:'ACH-20260428',icon:'pi-ach'},
+    ],
+    timeline:[
+      {action:'Invoice created',date:'Mar 31, 2026',color:'#AAA'},
+      {action:'Sent to d.chen@horizonbuilders.com',date:'Mar 31, 2026',color:'#3A7ED4'},
+      {action:'Payment received — $9,352 (ACH)',date:'Apr 15, 2026',color:'#3A9E6A'},
+      {action:'Payment received — $9,353 (ACH)',date:'Apr 28, 2026',color:'#3A9E6A'},
+      {action:'Invoice marked paid in full',date:'Apr 28, 2026',color:'#3A9E6A'},
+      {action:'Unconditional waiver sent',date:'Apr 29, 2026',color:'#3A9E6A'},
+    ]
+  },
+  {
+    id:3, num:'INV-2026-021', est:'EST-2026-060', so:'SO-2026-021',
+    customer:'ABC Construction Corp', contact:'Robert Park',
+    billingContact:'Maria Rodriguez', billingEmail:'billing@abcconstruction.com',
+    jobAddress:'7700 Mission Valley Rd, San Diego CA 92108',
+    companyAddress:'4500 Main St, San Diego CA 92103',
+    jobName:'Mission Valley Commercial Demo',
+    poNumber:'PO-2026-6010',
+    status:'sent',
+    invoiceDate:'May 1, 2026', dueDate:'May 31, 2026',
+    subtotal:28700, tax:2511, total:31211,
+    paid:0, balance:31211,
+    terms:'Net 30', waiver:'conditional', waiverSent:true, unconditionalSent:false,
+    paymentMethod:'portal',
+    lines:[
+      {desc:'Commercial interior demolition',qty:'8,000',unit:'sq ft',price:'$2.80',total:'$22,400'},
+      {desc:'Structural element removal',qty:'1',unit:'job',price:'$3,800',total:'$3,800'},
+      {desc:'Full debris hauling — 6 loads',qty:'6',unit:'loads',price:'$400',total:'$2,400'},
+      {desc:'Dust & containment systems',qty:'1',unit:'job',price:'$1,100',total:'$1,100'},
+    ],
+    payments:[],
+    timeline:[
+      {action:'Invoice created from EST-2026-060',date:'May 1, 2026',color:'#AAA'},
+      {action:'Sent to billing@abcconstruction.com',date:'May 1, 2026',color:'#3A7ED4'},
+      {action:'Conditional waiver sent',date:'May 1, 2026',color:'#C8822A'},
+    ]
+  },
+  {
+    id:4, num:'INV-2026-022', est:'EST-2026-062', so:'SO-2026-034',
+    customer:'Horizon Builders LLC', contact:'David Chen',
+    billingContact:'Priya Nair', billingEmail:'billing@horizonbuilders.com',
+    jobAddress:'450 Broadway, Chula Vista CA 91910',
+    companyAddress:'1200 Broadway, Chula Vista CA 91910',
+    jobName:'Broadway Interior',
+    poNumber:'HB-2026-0062',
+    status:'draft',
+    invoiceDate:'May 11, 2026', dueDate:'Jun 10, 2026',
+    subtotal:10500, tax:919, total:11419,
+    paid:0, balance:11419,
+    terms:'50% deposit / 50% completion', waiver:'unconditional', waiverSent:false, unconditionalSent:false,
+    paymentMethod:'ach',
+    lines:[
+      {desc:'Interior demolition — full floor',qty:'2,800',unit:'sq ft',price:'$3.00',total:'$8,400'},
+      {desc:'Debris hauling — 3 loads',qty:'3',unit:'loads',price:'$600',total:'$1,800'},
+      {desc:'Site protection & cleanup',qty:'1',unit:'job',price:'$300',total:'$300'},
+    ],
+    payments:[],
+    timeline:[
+      {action:'Draft created from EST-2026-062',date:'May 11, 2026',color:'#AAA'},
+    ]
+  },
+];
+
+const STATUS_CONFIG = {
+  draft:   {label:'Draft',           pill:'pill-draft',    color:'#AAA'},
+  sent:    {label:'Sent · open',     pill:'pill-sent',     color:'#3A7ED4'},
+  partial: {label:'Partial payment', pill:'pill-partial',  color:'#C8822A'},
+  paid:    {label:'Paid in full',    pill:'pill-paid',     color:'#3A9E6A'},
+  overdue: {label:'Overdue',         pill:'pill-overdue',  color:'#D94F4F'},
+};
+
+const GROUPS = ['draft','sent','partial','overdue','paid'];
+const GROUP_LABELS = {draft:'Draft',sent:'Sent · awaiting payment',partial:'Partial payment received',overdue:'Overdue',paid:'Paid in full'};
+
+let activeId = null;
+let payTargetId = null;
+
+function fmt(n){return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
+
+function renderList(q=''){
+  const lq = q.toLowerCase();
+  const list = document.getElementById('invList');
+  list.innerHTML = GROUPS.map(g=>{
+    const items = INVOICES.filter(i=>i.status===g && (
+      !lq || i.customer.toLowerCase().includes(lq) || i.num.toLowerCase().includes(lq) ||
+      i.poNumber.toLowerCase().includes(lq) || i.jobAddress.toLowerCase().includes(lq) ||
+      i.jobName.toLowerCase().includes(lq)
+    ));
+    if(!items.length) return '';
+    const groupTotal = items.reduce((s,i)=>s+i.balance,0);
+    const sc = STATUS_CONFIG[g];
+    return `<div>
+      <div class="group-hdr">
+        <div class="group-label">
+          <div class="group-dot" style="background:${sc.color};"></div>
+          ${GROUP_LABELS[g]}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${g!=='paid'&&groupTotal>0?`<div class="group-amt">${fmt(groupTotal)}</div>`:''}
+          <div class="group-count">${items.length}</div>
+        </div>
+      </div>
+      ${items.map(inv=>{
+        const pct = inv.total>0?Math.round(inv.paid/inv.total*100):0;
+        return `<div class="inv-item${activeId===inv.id?' active':''}" onclick="selectInvoice(${inv.id})">
+          <div class="ii-top">
+            <div class="ii-num">${inv.num}</div>
+            <div class="ii-amt">${fmt(inv.total)}</div>
+          </div>
+          <div class="ii-customer">${inv.customer}</div>
+          <div class="ii-addr">${inv.jobName} · ${inv.jobAddress.split(',')[0]}</div>
+          ${inv.poNumber?`<div style="font-size:10px;color:var(--info);font-weight:700;margin-top:3px;">PO: ${inv.poNumber}</div>`:''}
+          <div class="ii-bottom">
+            <div class="ii-date">${inv.invoiceDate}</div>
+            <div class="ii-balance" style="color:${inv.balance>0?'var(--danger)':'var(--success)'};">${inv.balance>0?'Balance: '+fmt(inv.balance):'Paid ✓'}</div>
+          </div>
+          ${inv.status==='partial'?`<div style="height:3px;border-radius:2px;background:var(--surface3);margin-top:8px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--success);border-radius:2px;"></div></div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function selectInvoice(id){
+  activeId = id;
+  renderList();
+  renderDetail();
+}
+
+function renderDetail(){
+  const inv = INVOICES.find(i=>i.id===activeId);
+  if(!inv) return;
+  const sc = STATUS_CONFIG[inv.status];
+  const pct = inv.total>0?Math.round(inv.paid/inv.total*100):0;
+
+  const actionBtns = {
+    draft:`<button class="btn btn-gold" onclick="sendInvoice(${inv.id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Send invoice to client</button>`,
+    sent:`<button class="btn btn-success" onclick="openPayModal(${inv.id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Record payment</button>`,
+    partial:`<button class="btn btn-success" onclick="openPayModal(${inv.id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Record payment</button>`,
+    paid:`<button class="btn btn-ghost btn-sm" onclick="openWaiverModal(${inv.id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Send unconditional waiver</button>`,
+    overdue:`<button class="btn btn-danger">Send reminder</button>`,
+  }[inv.status]||'';
+
+  const linesHTML = inv.lines.map(l=>`
+    <tr>
+      <td class="col-desc">${l.desc}${l.alt?`<span class="alt-tag">${l.alt}</span>`:''}</td>
+      <td class="col-qty">${l.qty}</td>
+      <td class="col-unit">${l.unit}</td>
+      <td class="col-price">${l.price}</td>
+      <td class="col-total">${l.total}</td>
+    </tr>`).join('');
+
+  const paymentsHTML = inv.payments.length ? inv.payments.map(p=>`
+    <div class="pay-row">
+      <div class="pay-icon ${p.icon}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </div>
+      <div class="pay-info">
+        <div class="pay-method">${p.label}</div>
+        <div class="pay-meta">${p.date} · Ref: ${p.ref}</div>
+      </div>
+      <div class="pay-amt">+${fmt(p.amt)}</div>
+    </div>`).join('') :
+    `<div style="color:var(--muted2);font-size:13px;font-style:italic;padding:8px 0;">No payments recorded yet</div>`;
+
+  const waiverHTML = `
+    <div class="waiver-row ${inv.waiverSent?'conditional':'pending'}">
+      <div class="waiver-icon ${inv.waiverSent?'wi-cond':'wi-pending'}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      </div>
+      <div class="waiver-info">
+        <div class="waiver-title">Conditional waiver</div>
+        <div class="waiver-sub">${inv.waiverSent?'Sent with invoice · '+inv.invoiceDate:'Not sent yet — send with invoice'}</div>
+      </div>
+      ${inv.waiverSent
+        ?`<span class="pill pill-paid">Sent</span>`
+        :`<button class="btn btn-ghost btn-sm" onclick="openWaiverModal(${inv.id})">Send</button>`}
+    </div>
+    <div class="waiver-row ${inv.unconditionalSent?'unconditional':'pending'}">
+      <div class="waiver-icon ${inv.unconditionalSent?'wi-uncond':'wi-pending'}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="waiver-info">
+        <div class="waiver-title">Unconditional waiver</div>
+        <div class="waiver-sub">${inv.unconditionalSent?'Sent after full payment received':'Send only after full payment is confirmed'}</div>
+      </div>
+      ${inv.unconditionalSent
+        ?`<span class="pill pill-paid">Sent</span>`
+        :`<button class="btn btn-ghost btn-sm" ${inv.status!=='paid'?'disabled style="opacity:.4;cursor:not-allowed;"':''} onclick="openWaiverModal(${inv.id})">Send</button>`}
+    </div>`;
+
+  const tlHTML = inv.timeline.map((t,i)=>`
+    <div style="display:flex;gap:12px;padding:9px 0;${i<inv.timeline.length-1?'border-bottom:1px solid var(--border);':''}">
+      <div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0;margin-top:5px;"></div>
+      <div>
+        <div style="font-size:13px;font-weight:500;">${t.action}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${t.date}</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('panelRight').innerHTML = `
+  <div class="detail-wrap">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Invoice total</div><div class="stat-val" style="color:var(--gold);">${fmt(inv.total)}</div><div class="stat-sub">${inv.terms}</div></div>
+      <div class="stat-card"><div class="stat-label">Paid so far</div><div class="stat-val" style="color:var(--success);">${fmt(inv.paid)}</div><div class="stat-sub">${pct}% of total</div></div>
+      <div class="stat-card"><div class="stat-label">Balance due</div><div class="stat-val" style="color:${inv.balance>0?'var(--danger)':'var(--success)'};">${fmt(inv.balance)}</div><div class="stat-sub">Due ${inv.dueDate}</div></div>
+      <div class="stat-card"><div class="stat-label">Status</div><div style="margin-top:6px;"><span class="pill ${sc.pill}" style="font-size:12px;padding:4px 12px;">${sc.label}</span></div></div>
+    </div>
+
+    <div class="inv-header-card">
+      <div class="ih-top">
+        <div>
+          <div class="ih-num">${inv.num}</div>
+          <div class="ih-customer">${inv.customer}</div>
+          <div class="ih-meta">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${inv.jobAddress}
+            </span>
+            <span>Billing: ${inv.billingContact} · ${inv.billingEmail}</span>
+          </div>
+        </div>
+        <div class="ih-actions">
+          <span class="pill ${sc.pill}" style="font-size:12px;padding:4px 12px;">${sc.label}</span>
+          ${actionBtns}
+          <button class="btn btn-ghost btn-sm" onclick="openPreview(${inv.id})">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Preview
+          </button>
+        </div>
+      </div>
+
+      <div class="ref-row">
+        <div class="ref-box">
+          <div class="ref-label">Invoice #</div>
+          <div class="ref-val highlight">${inv.num}</div>
+        </div>
+        <div class="ref-box">
+          <div class="ref-label">PO Number</div>
+          <div class="ref-val po">${inv.poNumber||'—'}</div>
+        </div>
+        <div class="ref-box">
+          <div class="ref-label">Estimate ref</div>
+          <div class="ref-val">${inv.est}</div>
+        </div>
+        <div class="ref-box">
+          <div class="ref-label">Sales Order</div>
+          <div class="ref-val">${inv.so}</div>
+        </div>
+        <div class="ref-box">
+          <div class="ref-label">Invoice date</div>
+          <div class="ref-val">${inv.invoiceDate}</div>
+        </div>
+        <div class="ref-box">
+          <div class="ref-label">Due date</div>
+          <div class="ref-val" style="color:${inv.balance>0?'var(--danger)':'var(--text)'};">${inv.dueDate}</div>
+        </div>
+        <div class="ref-box">
+          <div class="ref-label">Job name</div>
+          <div class="ref-val">${inv.jobName}</div>
+        </div>
+        <div class="ref-box">
+          <div class="ref-label">Payment method</div>
+          <div class="ref-val">${inv.paymentMethod==='portal'?'Client portal':'ACH / bank'}</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(184,146,42,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:8px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);">Job site address</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-top:1px;">${inv.jobAddress}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px;">Company: ${inv.companyAddress}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead><tr>
+          <th class="col-desc">Description</th>
+          <th class="col-qty">Qty</th>
+          <th class="col-unit">Unit</th>
+          <th class="col-price">Unit price</th>
+          <th class="col-total">Amount</th>
+        </tr></thead>
+        <tbody>${linesHTML}</tbody>
+      </table>
+
+      <div class="totals-box">
+        <div class="tot-row"></div>
+        <div class="tot-row"><span>Total</span><span>${fmt(inv.tax)}</span></div>
+        <div class="tot-row grand"><span>Invoice total</span><span style="color:var(--gold);">${fmt(inv.total)}</span></div>
+        ${inv.paid>0?`<div class="tot-row paid-line" style="margin-top:8px;"><span>Payments received</span><span>− ${fmt(inv.paid)}</span></div>`:''}
+        ${inv.balance>0?`<div class="tot-row balance-line"><span>Balance due</span><span style="color:var(--danger);">${fmt(inv.balance)}</span></div>`:'<div class="tot-row" style="color:var(--success);font-weight:600;padding-top:6px;"><span>Paid in full ✓</span><span></span></div>'}
+        ${inv.paid>0&&inv.total>0?`
+          <div class="pay-bar-wrap">
+            <div class="pay-bar-track"><div class="pay-bar-fill" style="width:${pct}%;"></div></div>
+            <div class="pay-pct">${pct}% paid · ${fmt(inv.paid)} of ${fmt(inv.total)}</div>
+          </div>`:''}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div class="card">
+          <div class="card-title">
+            Payment history
+            ${inv.status!=='paid'?`<button class="btn btn-success btn-sm" onclick="openPayModal(${inv.id})">+ Record payment</button>`:''}
+          </div>
+          ${paymentsHTML}
+        </div>
+
+        <div class="card">
+          <div class="card-title">Waivers</div>
+          ${waiverHTML}
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">Activity log</div>
+          ${tlHTML}
+        </div>
+        <div class="card">
+          <div class="card-title">Billing info</div>
+          <div class="info-grid">
+            <div class="info-box"><div class="info-label">Billing contact</div><div class="info-val">${inv.billingContact}</div><div class="info-sub">${inv.billingEmail}</div></div>
+            <div class="info-box"><div class="info-label">Payment terms</div><div class="info-val">${inv.terms}</div></div>
+            <div class="info-box"><div class="info-label">PO Number</div><div class="info-val" style="color:var(--info);">${inv.poNumber||'—'}</div></div>
+            <div class="info-box"><div class="info-label">Waiver type</div><div class="info-val">${inv.waiver==='conditional'?'Conditional':'Unconditional'}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+const CUSTOMER_SPECIAL = {
+  'ABC Construction Corp': 'Net/15 from completion. Conditional waiver required with every invoice. Do not send invoice without PO number confirmed.',
+  'Horizon Builders LLC': 'Invoices must go through client portal only. Do not email directly. Unconditional waiver required after payment.',
+  'Pacific Coast Development': 'All estimates must include alternate job options. Client requires 3 business days to review before signing.',
+  'Silverstone Group': 'Residential client — payment due on completion. No deposit required.',
+};
+
+let pendingInvoiceId = null;
+
+function sendInvoice(id){
+  const inv = INVOICES.find(i=>i.id===id);
+  if(!inv) return;
+  const si = CUSTOMER_SPECIAL[inv.customer];
+  if(si){
+    pendingInvoiceId = id;
+    document.getElementById('invSIText2').innerHTML =
+      '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Sending invoice — ' + inv.customer + '</div>' + si;
+    document.getElementById('invSIOkBtn').onclick = ()=>{
+      document.getElementById('invSIOverlay2').style.display='none';
+      showInvPdfPreview(id);
+    };
+    document.getElementById('invSIOverlay2').style.display='flex';
+  } else {
+    showInvPdfPreview(id);
+  }
+}
+
+function showInvPdfPreview(id){
+  const inv = INVOICES.find(i=>i.id===id);
+  if(!inv) return;
+  pendingInvoiceId = id;
+  document.getElementById('invPdfTitle').textContent = 'Invoice Preview — ' + inv.num;
+  document.getElementById('invPdfSendBtn').onclick = ()=>{
+    document.getElementById('invPdfOverlay').classList.remove('open');
+    doSendInvoice(id);
+  };
+  const tax = Math.round((inv.subtotal||inv.total)*0.0875);
+  document.getElementById('invPdfPage').innerHTML = `
+    <div class="pdf-header">
+      <div>
+        <div class="pdf-logo-txt">SDD Demolition</div>
+        <div class="pdf-logo-sub">San Diego Deconstruction & Demolition<br>License #1094583 · (619) 555-0100</div>
+      </div>
+      <div>
+        <div class="pdf-doc-label">INVOICE</div>
+        <div class="pdf-doc-num">#${inv.num}</div>
+        <div style="font-size:12px;color:#777;text-align:right;margin-top:2px;">${inv.invoiceDate||''}</div>
+        <div style="font-size:12px;color:#D94F4F;text-align:right;margin-top:2px;">Due: ${inv.dueDate||'Net 30'}</div>
+      </div>
+    </div>
+    <div class="pdf-bill-row">
+      <div><div class="pdf-bill-lbl">Bill to</div><div class="pdf-bill-val"><strong>${inv.customer}</strong><br>${inv.companyAddress||''}</div></div>
+      <div><div class="pdf-bill-lbl">Invoice details</div><div class="pdf-bill-val">EST ref: ${inv.est||'—'}<br>PO: ${inv.poNumber||'—'}<br>Terms: ${inv.terms||'Net 30'}</div></div>
+    </div>
+    <div class="pdf-address-box">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#B8922A;margin-bottom:4px;">Job site</div>
+      ${inv.jobAddress||inv.jobName||'—'}
+    </div>
+    <div style="margin-bottom:16px;">
+      <div class="pdf-section-title">Services rendered</div>
+      <!-- Description only — no unit prices shown to client -->
+      <table class="pdf-table"><thead><tr>
+        <th style="width:80%;">Description</th>
+        <th style="width:20%;text-align:right;">Amount</th>
+      </tr></thead><tbody>
+        ${(inv.lines||[{desc:'Demolition services',total:'$'+(inv.subtotal||inv.total).toLocaleString()}]).map(l=>`
+        <tr><td>${l.desc}</td><td style="text-align:right;font-weight:600;">${l.total||''}</td></tr>`).join('')}
+      </tbody></table>
+      <!-- Total only — no tax -->
+      <div class="pdf-tot-grand" style="margin-top:4px;"><span>Total due</span><span style="color:#B8922A;">$${inv.total.toLocaleString()}</span></div>
+      ${inv.paid>0?`<div class="pdf-tot-row" style="color:#3A9E6A;border-top:1px solid #E0E0E0;"><span>Payments received</span><span>($${inv.paid.toLocaleString()})</span></div>`:''}
+      ${inv.balance>0&&inv.balance<inv.total?`<div class="pdf-tot-grand"><span>Balance due</span><span style="color:#D94F4F;">$${inv.balance.toLocaleString()}</span></div>`:''}
+    </div>
+    <div class="pdf-footer">
+      <span>SDD Demolition · San Diego, CA · License #1094583</span>
+      <span>Thank you for your business</span>
+    </div>
+  `;
+  document.getElementById('invPdfOverlay').classList.add('open');
+}
+
+function doSendInvoice(id){
+  const inv = INVOICES.find(i=>i.id===id);
+  if(!inv) return;
+  inv.status = 'sent';
+  inv.waiverSent = inv.waiver === 'conditional';
+  inv.timeline.push({action:'Invoice sent to client', date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), color:'#3A7ED4'});
+  if(inv.waiverSent) inv.timeline.push({action:'Conditional waiver sent with invoice', date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), color:'#C8822A'});
+  inv.timeline.push({action:'Status → Sent · open · AR', date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), color:'#3A7ED4'});
+  renderList();
+  renderDetail();
+  const flash = document.createElement('div');
+  flash.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+  flash.textContent = `✓ Invoice ${inv.num} sent to client — status: Sent · open`;
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 4000);
+}
+
+function openPayModal(id){
+  payTargetId = id;
+  const inv = INVOICES.find(i=>i.id===id);
+  document.getElementById('payModalInfo').innerHTML =
+    `<strong>${inv.num}</strong> · ${inv.customer}<br>Balance due: <strong style="color:var(--danger);">${fmt(inv.balance)}</strong>`;
+  document.getElementById('payAmt').value = inv.balance;
+  document.getElementById('waiverEmail').value = inv.billingEmail||'';
+  openModal('payModal');
+}
+
+function confirmPayment(){
+  const inv = INVOICES.find(i=>i.id===payTargetId);
+  const amt = parseFloat(document.getElementById('payAmt').value)||0;
+  const method = document.getElementById('payMethod').value;
+  const date = document.getElementById('payDate').value;
+  const ref = document.getElementById('payRef').value||'—';
+  const methodLabels = {card:'Credit card',ach:'ACH transfer',check:'Check',wire:'Wire transfer',cash:'Cash'};
+  const iconMap = {card:'pi-card',ach:'pi-ach',check:'pi-check',wire:'pi-ach',cash:'pi-check'};
+  if(inv && amt>0){
+    inv.paid += amt;
+    inv.balance = Math.max(0, inv.balance - amt);
+    inv.payments.push({method,label:methodLabels[method],amt,date:new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),ref,icon:iconMap[method]||'pi-card'});
+    inv.timeline.push({action:`Payment received — ${fmt(amt)} (${methodLabels[method]})`,date:new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),color:'#3A9E6A'});
+    if(inv.balance===0){
+      inv.status='paid';
+      inv.timeline.push({action:'Invoice marked paid in full',date:new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),color:'#3A9E6A'});
+    } else {
+      inv.status='partial';
+    }
+  }
+  closeModal('payModal');
+  renderList();
+  renderDetail();
+}
+
+function openWaiverModal(id){
+  const inv = INVOICES.find(i=>i.id===id);
+  document.getElementById('waiverModalInfo').innerHTML = `${inv.num} · ${inv.customer}`;
+  document.getElementById('waiverEmail').value = inv.billingEmail||'';
+  document.getElementById('waiverType').value = inv.status==='paid'?'unconditional':'conditional';
+  openModal('waiverModal');
+}
+
+function confirmWaiver(){
+  const inv = INVOICES.find(i=>i.id===activeId);
+  const type = document.getElementById('waiverType').value;
+  if(inv){
+    if(type==='conditional') inv.waiverSent=true;
+    else inv.unconditionalSent=true;
+    inv.timeline.push({action:`${type==='conditional'?'Conditional':'Unconditional'} waiver sent`,date:'May 11, 2026',color:'#C8822A'});
+  }
+  closeModal('waiverModal');
+  renderDetail();
+}
+
+function openPreview(id){
+  const inv = INVOICES.find(i=>i.id===id);
+  document.getElementById('previewBody').innerHTML = `
+    <div class="preview-doc">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;">
+        <div>
+          <svg class="logo-svg" viewBox="0 0 120 60" width="72" height="36">
+            <polygon class="s-bar" points="28,8 58,8 42,52 12,52"/>
+            <text x="4" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">S</text>
+            <text x="44" y="50" font-family="Arial Black,sans-serif" font-weight="900" font-size="46" class="letters">DD</text>
+          </svg>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px;">SDD Demolition<br>San Diego, CA · (619) 555-0100<br>info@sdddemolition.com</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:700;color:var(--gold);">INVOICE</div>
+          <div style="font-size:14px;font-weight:600;margin-top:4px;">${inv.num}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;">Date: ${inv.invoiceDate}<br>Due: ${inv.dueDate}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted2);margin-bottom:8px;">Bill to</div>
+          <div style="font-size:14px;font-weight:600;">${inv.customer}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6;">${inv.companyAddress}<br>Attn: ${inv.billingContact}<br>${inv.billingEmail}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted2);margin-bottom:8px;">Job site</div>
+          <div style="font-size:14px;font-weight:600;">${inv.jobName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6;">${inv.jobAddress}</div>
+          ${inv.poNumber?`<div style="margin-top:8px;font-size:12px;"><span style="font-weight:700;color:var(--info);">PO: ${inv.poNumber}</span></div>`:''}
+        </div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+        <thead><tr style="border-bottom:2px solid var(--border2);">
+          <th style="text-align:left;padding:8px;color:var(--muted);font-size:11px;width:44%;">Description</th>
+          <th style="text-align:right;padding:8px;color:var(--muted);font-size:11px;width:10%;">Qty</th>
+          <th style="text-align:right;padding:8px;color:var(--muted);font-size:11px;width:10%;">Unit</th>
+          <th style="text-align:right;padding:8px;color:var(--muted);font-size:11px;width:14%;">Unit price</th>
+          <th style="text-align:right;padding:8px;color:var(--muted);font-size:11px;width:14%;">Amount</th>
+        </tr></thead>
+        <tbody>${inv.lines.map(l=>`<tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:9px 8px;">${l.desc}${l.alt?` <span style="font-size:10px;background:rgba(184,146,42,.1);color:var(--gold);padding:1px 6px;border-radius:20px;font-weight:600;">${l.alt}</span>`:''}</td>
+          <td style="text-align:right;padding:9px 8px;">${l.qty}</td>
+          <td style="text-align:right;padding:9px 8px;color:var(--muted);">${l.unit}</td>
+          <td style="text-align:right;padding:9px 8px;">${l.price}</td>
+          <td style="text-align:right;padding:9px 8px;font-weight:600;">${l.total}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+
+      <div style="display:flex;justify-content:flex-end;margin-bottom:24px;">
+        <div style="width:240px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--muted);"></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--muted);"><span>Total</span><span>${fmt(inv.tax)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;padding:10px 0;margin-top:6px;border-top:2px solid var(--border2);"><span>Total</span><span style="color:var(--gold);">${fmt(inv.total)}</span></div>
+          ${inv.paid>0?`<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--success);"><span>Paid</span><span>− ${fmt(inv.paid)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding:6px 0;color:var(--danger);"><span>Balance due</span><span>${fmt(inv.balance)}</span></div>`:''}
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;font-size:12px;color:var(--muted);">
+        <strong>Payment terms:</strong> ${inv.terms} &nbsp;·&nbsp; <strong>Payment methods accepted:</strong> Credit card, ACH, check &nbsp;·&nbsp; Thank you for your business.
+      </div>
+    </div>`;
+  document.getElementById('previewOverlay').classList.add('open');
+}
+
+function filterInvoices(q){renderList(q);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+renderList();
+
+// ── AUTO-CREATE INVOICE FROM URL PARAMS ──
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const estNum = params.get('create');
+  if(!estNum) { selectInvoice(1); return; }
+
+  // Build new draft invoice from estimate params
+  const customer  = params.get('customer') || '';
+  const amount    = parseFloat(params.get('amount')) || 0;
+  const jobName   = params.get('job') || '';
+  const poNumber  = params.get('po') || '';
+  const tax       = Math.round(amount * 0.0875);
+  const total     = amount + tax;
+  const newId     = Math.max(...INVOICES.map(i=>i.id)) + 1;
+  const invNum    = 'INV-' + String(newId).padStart(3,'0');
+
+  const newInv = {
+    id: newId,
+    num: invNum,
+    est: estNum,
+    so: 'SO-' + estNum.replace('EST-',''),
+    customer, contact: '',
+    billingContact: 'Billing Contact',
+    billingEmail: 'billing@client.com',
+    jobAddress: jobName,
+    companyAddress: '',
+    jobName, poNumber,
+    status: 'draft',
+    invoiceDate: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    dueDate: new Date(Date.now()+30*24*60*60*1000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    subtotal: amount, tax, total,
+    paid: 0, balance: total,
+    terms: 'Net 30', waiver: 'conditional', waiverSent: false, unconditionalSent: false,
+    paymentMethod: 'ach',
+    lines:[
+      {desc: jobName || 'Demolition services', qty:'1', unit:'job', price: '$'+amount.toLocaleString(), total: '$'+amount.toLocaleString()}
+    ],
+    payments:[],
+    timeline:[
+      {action:'Invoice created from estimate ' + estNum, date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), color:'#AAA'},
+      {action:'Status: Draft — review before sending', date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), color:'#777'},
+    ]
+  };
+
+  INVOICES.unshift(newInv);
+  renderList();
+  selectInvoice(newId);
+
+  // Show a banner prompting user to review and send
+  const banner = document.createElement('div');
+  banner.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px;max-width:520px;';
+  banner.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Invoice ${invNum} created as Draft — review and click <strong style="margin:0 4px;">Send Invoice</strong> when ready`;
+  document.body.appendChild(banner);
+  setTimeout(()=>banner.remove(), 6000);
+})();
+</script>
+
+
+
+
+<!-- ══ INVOICE SI POPUP ══ -->
+<div id="invSIOverlay2" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border-radius:16px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="padding:18px 24px;border-bottom:1px solid var(--border);background:rgba(184,146,42,.06);display:flex;align-items:center;gap:12px;">
+      <div style="width:38px;height:38px;border-radius:50%;background:rgba(184,146,42,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;">Special billing instructions</div>
+    </div>
+    <div style="padding:20px 24px;">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Review before sending this invoice.</div>
+      <div style="background:var(--surface2);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:14px 16px;font-size:14px;color:var(--text);line-height:1.7;" id="invSIText2"></div>
+    </div>
+    <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;background:var(--surface2);">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('invSIOverlay2').style.display='none';">Cancel — go back</button>
+      <button class="btn btn-gold" id="invSIOkBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        OK, understood — preview invoice
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INVOICE PDF PREVIEW ══ -->
+<div class="pdf-overlay" id="invPdfOverlay">
+  <div class="pdf-modal">
+    <div class="pdf-toolbar">
+      <div class="pdf-toolbar-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="invPdfTitle">Invoice Preview</span>
+        <span style="font-size:11px;color:#aaa;margin-left:8px;">Review before sending</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" style="color:#ccc;border-color:#555;" onclick="document.getElementById('invPdfOverlay').classList.remove('open')">✕ Close</button>
+        <button class="btn btn-gold" id="invPdfSendBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send invoice to client
+        </button>
+      </div>
+    </div>
+    <div style="padding:16px;overflow-y:auto;max-height:calc(100vh - 120px);">
+      <div class="pdf-page" id="invPdfPage"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
