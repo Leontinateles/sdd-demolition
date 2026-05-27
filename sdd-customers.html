@@ -588,12 +588,125 @@ function renderList(){
 }
 
 // ══ RENDER DETAIL ══
+function openEditCustomer(id){
+  const c = CUSTOMERS.find(x=>x.id===parseInt(id));
+  if(!c) return;
+  const g = (eid, val) => { const el=document.getElementById(eid); if(el) el.value=val||''; };
+  const pm = c.contacts.find(x=>x.role==='project-manager')||c.contacts[0]||{};
+  const nameParts = (pm.name||'').split(' ');
+
+  // ── STEP 1: Company info ─────────────────────────────────────────────
+  g('nc_company', c.name);
+  g('nc_phone', pm.phone||c.phone||'');
+  g('nc_email', pm.email||'');
+  g('nc_fname', nameParts[0]||'');
+  g('nc_lname', nameParts.slice(1).join(' ')||'');
+  const addrParts = (c.address||'').split(',');
+  const streetParts = (addrParts[0]||'').trim().split(' ');
+  g('nc_snum', streetParts[0]||'');
+  const streetTypes = ['Ave','Blvd','Cir','Ct','Dr','Hwy','Ln','Pkwy','Pl','Rd','St','Way'];
+  const streetWords = streetParts.slice(1);
+  const lastWord = streetWords[streetWords.length-1]||'';
+  let sname='', stype='';
+  if(streetTypes.includes(lastWord)){ stype=lastWord; sname=streetWords.slice(0,-1).join(' '); }
+  else { sname=streetWords.join(' '); }
+  g('nc_sname', sname);
+  const stEl = document.getElementById('nc_stype'); if(stEl) stEl.value=stype;
+  const cityStateZip = addrParts.slice(1).join(',').trim();
+  const cityMatch = cityStateZip.match(/^(.+?),?\s*([A-Z]{2})\s*(\d{5})?/);
+  if(cityMatch){
+    g('nc_city', (cityMatch[1]||'').trim());
+    const stEl2 = document.getElementById('nc_state'); if(stEl2) stEl2.value=cityMatch[2]||'CA';
+    g('nc_zip', cityMatch[3]||'');
+  } else {
+    const cityParts = (c.city||'').split(',');
+    g('nc_city', (cityParts[0]||'').trim());
+  }
+  const commEl=document.getElementById('nc_commercial'), resEl=document.getElementById('nc_residential');
+  const lblC=document.getElementById('nc_lbl_comm'), lblR=document.getElementById('nc_lbl_res');
+  if(c.type==='residential'){
+    if(resEl)resEl.checked=true; if(lblR)lblR.style.borderColor='var(--gold)'; if(lblC)lblC.style.borderColor='var(--border2)';
+  } else {
+    if(commEl)commEl.checked=true; if(lblC)lblC.style.borderColor='var(--gold)'; if(lblR)lblR.style.borderColor='var(--border2)';
+  }
+
+  // ── STEP 2: Show existing jobs + PMs ────────────────────────────────
+  const allJobs = getAllJobs(c);
+  const step2El = document.getElementById('ncStep2');
+  if(step2El){
+    const jobsListHTML = allJobs.length ? allJobs.map(j=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;">${j.est}${j.address?' — '+j.address:''}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${j.contactName||''} · ${j.status} · ${j.amount}</div>
+        </div>
+        <span style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--surface2);color:var(--muted);font-weight:700;">${j.date}</span>
+      </div>`).join('') : '<div style="font-size:13px;color:var(--muted2);font-style:italic;padding:8px 0;">No jobs yet — fill the form below to add one.</div>';
+
+    const pmEl = c.contacts.filter(x=>x.role==='project-manager');
+    const pmListHTML = pmEl.length ? pmEl.map(p=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;font-size:13px;">
+        <div class="avatar ${p.color}" style="width:30px;height:30px;font-size:11px;">${p.initials}</div>
+        <div><strong>${p.name}</strong> · ${p.email||''} ${p.phone?'· '+p.phone:''}</div>
+      </div>`).join('') : '';
+
+    // Inject existing data before the form
+    let s2html = step2El.innerHTML;
+    const existingInfoId = 'edit_existing_jobs_'+id;
+    if(!document.getElementById(existingInfoId)){
+      const insertPoint = step2El.querySelector('.fsec');
+      if(insertPoint){
+        const existingDiv = document.createElement('div');
+        existingDiv.id = existingInfoId;
+        existingDiv.style.cssText = 'margin-bottom:16px;';
+        existingDiv.innerHTML = `
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;">Existing jobs</div>
+          ${jobsListHTML}
+          ${pmListHTML ? '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 8px;">Project Managers</div>'+pmListHTML : ''}
+          <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;">Add new job</div>`;
+        step2El.insertBefore(existingDiv, insertPoint);
+      }
+    }
+  }
+
+  // ── Open modal ───────────────────────────────────────────────────────
+  _ncStep=1; _ncCC=[];
+  document.querySelectorAll('#modalBg .ferr').forEach(e=>{if(e&&e.classList)e.classList.remove('show');});
+  ncGo(1);
+  window._editingCustomerId = id;
+  const mb=document.getElementById('modalBg');
+  if(mb){mb.classList.add('open');mb.style.visibility='visible';mb.style.pointerEvents='all';}
+}
+
+
 function renderDetail(id){
   const c = CUSTOMERS.find(x=>x.id===id);
   if(!c){ document.getElementById('panelRight').innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;opacity:.25;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>Select a customer</span></div>'; return; }
   const allJobs = getAllJobs(c);
   const t = getTotals(c);
   const billing = allJobs.filter(j=>j.status==='Ready to bill').length;
+
+  // ── Pre-compute for template ──
+  const pm = c.contacts.find(x=>x.role==='project-manager') || c.contacts[0];
+  const pmRowHTML = pm ? `
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <strong style="color:var(--text);">${pm.name}</strong>${pm.title ? ' &nbsp;·&nbsp; '+pm.title : ''}${pm.phone ? ' &nbsp;&nbsp;📞 '+pm.phone : ''}${pm.email ? ' &nbsp;&nbsp;✉ '+pm.email : ''}
+    </div>` : '';
+
+  const hasBilling = c.contacts.some(x=>x.role==='billing');
+  const hasJob = allJobs.length > 0;
+  const bannerHTML = [
+    !hasJob ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(200,130,42,.08);border-bottom:1px solid rgba(200,130,42,.2);">
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--warning);">⚠ No jobs added yet — add job and project manager info</div>
+      <button class="btn btn-ghost btn-sm" style="border-color:var(--warning);color:var(--warning);font-size:11px;white-space:nowrap;" onclick="openModal()">+ Add job</button>
+    </div>` : '',
+    !hasBilling ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:rgba(217,79,79,.06);border-bottom:1px solid rgba(217,79,79,.15);">
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--danger);">⚠ Billing information pending — no billing contacts added</div>
+      <button class="btn btn-ghost btn-sm" style="border-color:var(--danger);color:var(--danger);font-size:11px;white-space:nowrap;" onclick="openModal()">+ Complete billing</button>
+    </div>` : ''
+  ].filter(Boolean).join('');
 
   const jobCardsHTML = allJobs.length ? allJobs.map(j=>`
     <div class="job-card" onclick="goToEstimate('${j.est}')">
@@ -650,16 +763,18 @@ function renderDetail(id){
             <span>📍 ${c.address}</span>
             <span>📞 ${c.phone}</span>
           </div>
+          ${pmRowHTML}
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
-          <button class="btn btn-ghost btn-sm">Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditCustomer(${c.id})">Edit</button>
           <button class="btn btn-gold btn-sm" onclick="openTypeSel('${c.name.replace(/'/g,"\\'")}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             New estimate
           </button>
         </div>
       </div>
-      <div class="stats-row" style="grid-template-columns:repeat(5,1fr);">
+      ${bannerHTML}
+            <div class="stats-row" style="grid-template-columns:repeat(5,1fr);">
         <div class="stat-box" onclick="navigateFromStat('estimates','${c.id}')" style="cursor:pointer;" title="View approved estimates">
           <div class="stat-label">Approved estimates</div>
           <div class="stat-val" style="color:${t.approvedEstCount>0?'var(--info)':'var(--text)'};">${t.approvedEstCount}</div>
@@ -1424,7 +1539,7 @@ function deleteUploadedDoc(customerId, idx){
 let _ncStep=1,_ncCC=[];
 
 function openModal(){
-  _ncStep=1; _ncCC=[];
+  _ncStep=1; _ncCC=[]; window._editingCustomerId=null;
   ['nc_company','nc_fname','nc_lname','nc_phone','nc_email','nc_snum','nc_sname','nc_city','nc_zip',
    'nc_po','nc_jobname','nc_jobaddr','nc_pm_fn','nc_pm_ln','nc_pm_ph','nc_pm_em',
    'nc_bc_fn','nc_bc_ln','nc_bc_em','nc_bc_ph','nc_bc_ti','nc_cc_fn','nc_cc_ln','nc_cc_em','nc_cc_ph','nc_si_text'
@@ -1509,6 +1624,29 @@ function ncAddCC(){
 }
 
 function ncBuildAndSave(incomplete){
+  // If editing an existing customer, update instead of create
+  if(window._editingCustomerId && !incomplete){
+    const existing = CUSTOMERS.find(x=>x.id===parseInt(window._editingCustomerId));
+    if(existing){
+      const g=id=>(document.getElementById(id)||{value:''}).value.trim();
+      existing.name = g('nc_company');
+      existing.phone = g('nc_phone');
+      existing.address = g('nc_snum')+' '+g('nc_sname')+' '+g('nc_stype')+', '+g('nc_city')+' '+(g('nc_state')||'CA')+' '+g('nc_zip');
+      existing.city = g('nc_city')+', '+(g('nc_state')||'CA');
+      existing.type = document.getElementById('nc_residential')?.checked?'residential':'commercial';
+      const pm = existing.contacts.find(x=>x.role==='project-manager')||existing.contacts[0];
+      if(pm){ pm.name=g('nc_fname')+' '+g('nc_lname'); pm.phone=g('nc_phone'); pm.email=g('nc_email'); pm.initials=((g('nc_fname')[0]||'')+(g('nc_lname')[0]||'')).toUpperCase(); }
+      window._editingCustomerId = null;
+      closeModal();
+      renderList(); renderDetail(existing.id);
+      const fl=document.createElement('div');
+      fl.style.cssText='position:fixed;bottom:24px;right:24px;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);background:var(--success);';
+      fl.textContent='✓ Customer updated';
+      document.body.appendChild(fl); setTimeout(()=>fl.remove(),3000);
+      return;
+    }
+    window._editingCustomerId = null;
+  }
   const g=id=>(document.getElementById(id)||{value:''}).value.trim();
   const addr=g('nc_snum')+' '+g('nc_sname')+' '+g('nc_stype')+', '+g('nc_city')+' '+(g('nc_state')||'CA')+' '+g('nc_zip');
   const fn=g('nc_fname'),ln=g('nc_lname'),init=((fn[0]||'')+(ln[0]||'')).toUpperCase();
