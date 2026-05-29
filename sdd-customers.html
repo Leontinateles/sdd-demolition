@@ -2604,7 +2604,7 @@ function exportSOVPdf(customerId){
 
 
 // ══ ADD JOB MODAL ══
-let _ajCustomerId=null, _ajDuplicateConfirmed=false, _ajDuplicateJobs=[];
+let _ajCustomerId=null, _ajDuplicateConfirmed=false, _ajDuplicateJobs=[], _ajNavigateAfterSave=false;
 
 function toRoman(n){
   const v=[1000,900,500,400,100,90,50,40,10,9,5,4,1],s=['M','CM','D','CD','C','XC','L','XL','X','IX','V','IV','I'];
@@ -2931,6 +2931,7 @@ function ajDupYes(){
   var p=document.getElementById('_ajDupPopup');
   if(p) p.parentNode.removeChild(p);
   _ajDuplicateConfirmed=true;
+  _ajNavigateAfterSave=true; // flag to navigate after save
   ajDynSave();
 }
 
@@ -2938,14 +2939,16 @@ function ajDupNo(){
   var p=document.getElementById('_ajDupPopup');
   if(p) p.parentNode.removeChild(p);
   closeAddJobModal();
-  // Go to Jobs tab
-  var tabs=document.querySelectorAll('.tab-btn');
-  for(var i=0;i<tabs.length;i++){
-    if(tabs[i].textContent.trim().toLowerCase().indexOf('job')===0){
-      tabs[i].click(); break;
+  // Navigate to the existing duplicate job in sdd-jobs.html
+  if(_ajDuplicateJobs && _ajDuplicateJobs.length){
+    var estNum=_ajDuplicateJobs[0].est;
+    if(estNum){
+      window.location.href='/sdd-jobs.html?est='+encodeURIComponent(estNum);
+      return;
     }
   }
-  if(activeId) renderDetail(activeId);
+  // Fallback: go to jobs module
+  window.location.href='/sdd-jobs.html';
 }
 function ajDynCancel(){
   _ajDuplicateConfirmed=false;
@@ -2971,6 +2974,7 @@ function ajDynSave(){
     });
     if(dups.length){
       // Build and show a separate popup
+      _ajDuplicateJobs=dups;
       var existing=document.getElementById('_ajDupPopup');
       if(existing) existing.parentNode.removeChild(existing);
       var dupHtml='<div id="_ajDupPopup" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;">'
@@ -3018,6 +3022,11 @@ function ajDynSave(){
     else{var f2=cust.contacts[0];if(f2){if(!f2.jobs)f2.jobs=[];f2.jobs.push(newJob);}}
   }
   closeAddJobModal();renderDetail(_ajCustomerId);renderList();
+  if(_ajNavigateAfterSave){
+    _ajNavigateAfterSave=false;
+    window.location.href='/sdd-jobs.html?est='+encodeURIComponent(estNum);
+    return;
+  }
   var fl=document.createElement('div');
   fl.style.cssText='position:fixed;bottom:24px;right:24px;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999999;box-shadow:0 4px 20px rgba(0,0,0,.2);background:#2ecc71;';
   fl.textContent='✓ Job added — '+estNum;
