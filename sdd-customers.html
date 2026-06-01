@@ -667,12 +667,25 @@ const CUSTOMERS = [
       email:'j.torres@abcconstruction.com', phone:'(619) 555-0102', title:'Project Manager',
       jobs:[
         {est:'EST-047', address:'1420 Harbor Blvd', city:'San Diego CA 92101', status:'In progress', amount:'$14,301', date:'May 2, 2026', projectName:'Harbor Blvd Demolition',
-          estimates:[{est:'EST-047',amount:'$14,301',status:'In progress',date:'May 2, 2026'},{est:'EST-052',amount:'$8,200',status:'Pending approval',date:'May 5, 2026'}],
-          changeOrders:[{est:'CO-001',amount:'$2,100',status:'Approved',date:'May 10, 2026'}],
-          invoices:[{est:'INV-001',amount:'$14,301',status:'Sent',date:'May 15, 2026'}]},
+          estimates:[
+            {est:'EST-047',amount:'$14,301',status:'In progress',date:'May 2, 2026',scope:'Original Scope - Demolition'},
+            {est:'EST-052',amount:'$8,200',status:'Pending approval',date:'May 5, 2026',scope:'Revised Scope - Debris Removal'}
+          ],
+          changeOrders:[
+            {est:'EST-CO047-1',originalEst:'EST-047',amount:'$2,100',status:'Approved',date:'May 10, 2026',description:'Additional haul-off - 3 loads'},
+            {est:'EST-CO047-2',originalEst:'EST-047',amount:'$950',status:'Pending',date:'May 12, 2026',description:'Hazmat disposal - asbestos tile'}
+          ],
+          invoices:[
+            {est:'INV-047-1',originalEst:'EST-047',amount:'$14,301',status:'Sent',date:'May 15, 2026',due:'Jun 14, 2026'},
+            {est:'INV-047-2',originalEst:'EST-047',amount:'$2,100',status:'Paid',date:'May 18, 2026',due:'Jun 17, 2026'}
+          ]},
         {est:'EST-051', address:'880 5th Ave', city:'San Diego CA 92101', status:'Pending approval', amount:'$9,850', date:'May 8, 2026', projectName:'5th Ave Demo',
-          estimates:[{est:'EST-051',amount:'$9,850',status:'Pending approval',date:'May 8, 2026'}],
-          changeOrders:[],
+          estimates:[
+            {est:'EST-051',amount:'$9,850',status:'Pending approval',date:'May 8, 2026',scope:'Site Demo - Full Clearance'}
+          ],
+          changeOrders:[
+            {est:'EST-CO051-1',originalEst:'EST-051',amount:'$1,400',status:'Pending',date:'May 14, 2026',description:'Underground pipe removal'}
+          ],
           invoices:[]},
       ]},
      {id:'c3', name:'Sandra Lee', initials:'SL', color:'av-warning', role:'project-manager',
@@ -905,49 +918,78 @@ function tcInput(el){
 
 function showJobPopup(e, customerId, estNum, type){
   e.stopPropagation();
-  // Remove existing popup
   var ex=document.getElementById('_jobListPopup');
   if(ex) ex.parentNode.removeChild(ex);
 
   var c=CUSTOMERS.find(function(x){return x.id===parseInt(customerId);});
   if(!c) return;
-
-  // Find the job
   var job=getCustomerJobs(c).find(function(j){return j.est===estNum;});
   if(!job) return;
 
   var items=job[type]||[];
-  if(type==='estimates'&&items.length===0&&job.est) items=[{est:job.est,amount:job.amount,status:job.status,date:job.date}];
+  if(type==='estimates'&&items.length===0&&job.est) items=[{est:job.est,amount:job.amount,status:job.status,date:job.date,scope:''}];
 
   var titles={estimates:'Estimates',changeOrders:'Change Orders',invoices:'Invoices'};
   var colors={estimates:'#2563eb',changeOrders:'#b8922a',invoices:'#16a34a'};
-  var navFn={estimates:'goToEstimate',changeOrders:'goToEstimate',invoices:'goToInvoice'};
   var color=colors[type]||'#333';
   var title=titles[type]||type;
+  var projectName=job.projectName||job.jobName||job.address||'';
 
   var rows=items.length ? items.map(function(item){
     var dest=type==='invoices'
       ? "window.location.href='/sdd-invoices.html?est="+item.est+"'"
       : "goToEstimate('"+item.est+"')";
-    return '<div onclick="'+dest+';document.getElementById(\'_jobListPopup\').remove()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #eee;cursor:pointer;transition:background .1s;" onmouseover="this.style.background=\'#f8f8f8\'" onmouseout="this.style.background=\'\'">'
-      +'<div>'
-      +'<div style="font-weight:600;font-size:13px;color:'+color+';">'+item.est+'</div>'
-      +'<div style="font-size:12px;color:#666;margin-top:2px;">'+item.date+' · '+item.status+'</div>'
+    var badge='';
+    var sub='';
+    if(type==='changeOrders'){
+      badge='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(184,146,42,.12);color:#b8922a;font-weight:700;margin-left:8px;">CO</span>';
+      sub='<div style="font-size:11px;color:#999;margin-top:2px;">Ref: '+(item.originalEst||'—')+' · '+item.date+'</div>'
+          +'<div style="font-size:12px;color:#666;margin-top:1px;">'+(item.description||'')+'</div>';
+    } else if(type==='invoices'){
+      badge='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(46,204,113,.12);color:#16a34a;font-weight:700;margin-left:8px;">INV</span>';
+      sub='<div style="font-size:11px;color:#999;margin-top:2px;">Ref: '+(item.originalEst||item.est)+' · Due: '+(item.due||'—')+'</div>'
+          +'<div style="font-size:12px;color:#666;margin-top:1px;">Status: '+item.status+'</div>';
+    } else {
+      badge='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(59,130,246,.12);color:#2563eb;font-weight:700;margin-left:8px;">EST</span>';
+      sub='<div style="font-size:11px;color:#999;margin-top:2px;">'+item.date+(item.scope?' · '+item.scope:'')+'</div>'
+          +'<div style="font-size:12px;color:#666;margin-top:1px;">Status: '+item.status+'</div>';
+    }
+    var statusDot=item.status==='Approved'||item.status==='Paid'?'#16a34a':item.status==='Pending'||item.status==='Pending approval'?'#b8922a':'#2563eb';
+    return '<div onclick="'+dest+';document.getElementById(\'_jobListPopup\').remove()" style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .12s;" onmouseover="this.style.background=\'#fafaf8\'" onmouseout="this.style.background=\'\'">'
+      +'<div style="flex:1;">'
+      +'<div style="display:flex;align-items:center;">'
+      +'<span style="font-weight:700;font-size:13px;color:'+color+';">'+item.est+'</span>'+badge
       +'</div>'
-      +'<div style="font-weight:700;font-size:14px;color:#333;">'+item.amount+'</div>'
+      +sub
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0;margin-left:12px;">'
+      +'<div style="font-weight:700;font-size:14px;color:#222;">'+item.amount+'</div>'
+      +'<div style="font-size:11px;font-weight:600;color:'+statusDot+';margin-top:2px;">'+item.status+'</div>'
+      +'</div>'
       +'</div>';
-  }).join('') : '<div style="padding:16px;font-size:13px;color:#999;text-align:center;">No '+title.toLowerCase()+' found</div>';
+  }).join('') : '<div style="padding:20px;font-size:13px;color:#999;text-align:center;font-style:italic;">No '+title.toLowerCase()+' for this project</div>';
 
-  var html='<div id="_jobListPopup" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;" onclick="this.remove()">'
-    +'<div style="background:#fff;border-radius:14px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:Barlow,sans-serif;overflow:hidden;" onclick="event.stopPropagation()">'
-    +'<div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">'
+  // Calculate total
+  var total=items.reduce(function(sum,item){
+    var n=parseFloat((item.amount||'0').replace(/[$,]/g,''))||0;
+    return sum+n;
+  },0);
+  var totalStr=total>0?'$'+total.toLocaleString('en-US',{minimumFractionDigits:2}):'';
+
+  var html='<div id="_jobListPopup" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;" onclick="this.remove()">'
+    +'<div style="background:#fff;border-radius:14px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:Barlow,sans-serif;overflow:hidden;" onclick="event.stopPropagation()">'
+    // Header
+    +'<div style="padding:16px 20px;background:'+color+';color:#fff;display:flex;justify-content:space-between;align-items:center;">'
     +'<div>'
-    +'<div style="font-size:16px;font-weight:700;color:'+color+';">'+title+'</div>'
-    +'<div style="font-size:12px;color:#888;margin-top:2px;">'+(job.projectName||job.jobName||job.address)+'</div>'
+    +'<div style="font-size:16px;font-weight:700;">'+title+' ('+items.length+')</div>'
+    +'<div style="font-size:12px;opacity:.85;margin-top:2px;">'+projectName+'</div>'
     +'</div>'
-    +'<button onclick="document.getElementById(\'_jobListPopup\').remove()" style="border:none;background:none;font-size:20px;cursor:pointer;color:#999;line-height:1;">×</button>'
+    +'<button onclick="document.getElementById(\'_jobListPopup\').remove()" style="border:none;background:rgba(255,255,255,.2);color:#fff;width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>'
     +'</div>'
-    +'<div style="max-height:360px;overflow-y:auto;">'+rows+'</div>'
+    // List
+    +'<div style="max-height:380px;overflow-y:auto;">'+rows+'</div>'
+    // Footer total
+    +(totalStr?'<div style="padding:12px 16px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;background:#fafafa;"><span style="font-size:12px;color:#666;font-weight:600;">TOTAL</span><span style="font-size:16px;font-weight:700;color:'+color+';">'+totalStr+'</span></div>':'')
     +'</div>'
     +'</div>';
 
