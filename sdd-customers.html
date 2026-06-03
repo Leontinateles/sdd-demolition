@@ -690,15 +690,15 @@ const CUSTOMERS = [
       jobs:[
         {est:'EST-047', address:'1420 Harbor Blvd', city:'San Diego CA 92101', status:'In progress', amount:'$14,301', date:'May 2, 2026', projectName:'Harbor Blvd Demolition',
           estimates:[
-            {est:'EST-047',amount:'$14,301',status:'In progress',date:'May 2, 2026',scope:'Original Scope - Demolition'},
+            {est:'EST-047',amount:'$14,301',status:'Paid',date:'May 2, 2026',scope:'Original Scope - Demolition'},
             {est:'EST-052',amount:'$8,200',status:'Pending approval',date:'May 5, 2026',scope:'Revised Scope - Debris Removal'}
           ],
           changeOrders:[
             {est:'EST-CO047-1',originalEst:'EST-047',amount:'$2,100',status:'Approved',date:'May 10, 2026',description:'Additional haul-off - 3 loads'},
-            {est:'EST-CO047-2',originalEst:'EST-047',amount:'$950',status:'Pending',date:'May 12, 2026',description:'Hazmat disposal - asbestos tile'}
+            {est:'EST-CO052-1',originalEst:'EST-052',amount:'$950',status:'Pending',date:'May 12, 2026',description:'Hazmat disposal - asbestos tile'}
           ],
           invoices:[
-            {est:'INV-047-1',originalEst:'EST-047',amount:'$14,301',status:'Sent',date:'May 15, 2026',due:'Jun 14, 2026'},
+            {est:'INV-047-1',originalEst:'EST-047',amount:'$14,301',status:'Paid',date:'May 15, 2026',due:'Jun 14, 2026'},
             {est:'INV-047-2',originalEst:'EST-047',amount:'$2,100',status:'Paid',date:'May 18, 2026',due:'Jun 17, 2026'}
           ]},
         {est:'EST-051', address:'880 5th Ave', city:'San Diego CA 92101', status:'Pending approval', amount:'$9,850', date:'May 8, 2026', projectName:'5th Ave Demo',
@@ -946,6 +946,14 @@ function tcInput(el){
 }
 
 
+function toggleBillingJob(bid){
+  var body=document.getElementById('billjob-body-'+bid);
+  var chev=document.getElementById('billjob-chev-'+bid);
+  if(!body) return;
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(chev) chev.style.transform=open?'rotate(0deg)':'rotate(90deg)';
+}
 function toggleArchivedJobs(cid){
   var body=document.getElementById('arch-body-'+cid);
   var chev=document.getElementById('arch-chev-'+cid);
@@ -1036,8 +1044,77 @@ function showJobPopup(e, customerId, estNum, type){
   document.body.appendChild(d.firstChild);
 }
 
-function goToInvoice(est){
-  window.location.href='/sdd-invoices.html?est='+encodeURIComponent(est);
+// Popup for a single archived cycle line: filters items to one estimate + its COs/invoices
+function showLinePopup(e, customerId, estId, type){
+  e.stopPropagation();
+  var ex=document.getElementById('_jobListPopup');
+  if(ex) ex.parentNode.removeChild(ex);
+  var c=CUSTOMERS.find(function(x){return x.id===parseInt(customerId);});
+  if(!c) return;
+  // Find the job that contains this estimate line
+  var job=null;
+  getCustomerJobs(c).forEach(function(j){
+    if((j.estimates||[]).some(function(es){return es.est===estId;})) job=j;
+  });
+  if(!job) return;
+
+  var items=[];
+  if(type==='estimates'){
+    items=(job.estimates||[]).filter(function(es){return es.est===estId;});
+  } else if(type==='changeOrders'){
+    items=(job.changeOrders||[]).filter(function(co){return co.originalEst===estId;});
+  } else if(type==='invoices'){
+    items=(job.invoices||[]).filter(function(iv){return (iv.originalEst||iv.est)===estId;});
+  }
+
+  var titles={estimates:'Estimate',changeOrders:'Change Orders',invoices:'Invoices'};
+  var colors={estimates:'#2563eb',changeOrders:'#b8922a',invoices:'#16a34a'};
+  var color=colors[type]||'#333';
+  var title=titles[type]||type;
+  var projectName=(job.projectName||job.jobName||job.address||'')+' · '+estId;
+
+  var rows=items.length ? items.map(function(item){
+    var dest=type==='invoices'
+      ? "window.location.href='/sdd-invoices.html?est="+item.est+"'"
+      : "goToEstimate('"+item.est+"')";
+    var badge='';var sub='';
+    if(type==='changeOrders'){
+      badge='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(184,146,42,.12);color:#b8922a;font-weight:700;margin-left:8px;">CO</span>';
+      sub='<div style="font-size:11px;color:#999;margin-top:2px;">Ref: '+(item.originalEst||'—')+' · '+item.date+'</div>'
+          +'<div style="font-size:12px;color:#666;margin-top:1px;">'+(item.description||'')+'</div>';
+    } else if(type==='invoices'){
+      badge='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(46,204,113,.12);color:#16a34a;font-weight:700;margin-left:8px;">INV</span>';
+      sub='<div style="font-size:11px;color:#999;margin-top:2px;">Ref: '+(item.originalEst||item.est)+' · Due: '+(item.due||'—')+'</div>'
+          +'<div style="font-size:12px;color:#666;margin-top:1px;">Status: '+item.status+'</div>';
+    } else {
+      badge='<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(59,130,246,.12);color:#2563eb;font-weight:700;margin-left:8px;">EST</span>';
+      sub='<div style="font-size:11px;color:#999;margin-top:2px;">'+item.date+(item.scope?' · '+item.scope:'')+'</div>'
+          +'<div style="font-size:12px;color:#666;margin-top:1px;">Status: '+item.status+'</div>';
+    }
+    var statusDot=item.status==='Approved'||item.status==='Paid'?'#16a34a':item.status==='Pending'||item.status==='Pending approval'?'#b8922a':'#2563eb';
+    return '<div onclick="'+dest+';document.getElementById(\'_jobListPopup\').remove()" style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .12s;" onmouseover="this.style.background=\'#fafaf8\'" onmouseout="this.style.background=\'\'">'
+      +'<div style="flex:1;"><div style="display:flex;align-items:center;"><span style="font-weight:700;font-size:13px;color:'+color+';">'+item.est+'</span>'+badge+'</div>'+sub+'</div>'
+      +'<div style="text-align:right;flex-shrink:0;margin-left:12px;"><div style="font-weight:700;font-size:14px;color:#222;">'+item.amount+'</div>'
+      +'<div style="font-size:11px;font-weight:600;color:'+statusDot+';margin-top:2px;">'+item.status+'</div></div>'
+      +'</div>';
+  }).join('') : '<div style="padding:20px;font-size:13px;color:#999;text-align:center;font-style:italic;">No '+title.toLowerCase()+' for this line</div>';
+
+  var total=items.reduce(function(sum,item){var n=parseFloat((item.amount||'0').replace(/[$,]/g,''))||0;return sum+n;},0);
+  var totalStr=total>0?'$'+total.toLocaleString('en-US',{minimumFractionDigits:2}):'';
+
+  var html='<div id="_jobListPopup" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999999;display:flex;align-items:center;justify-content:center;padding:24px;" onclick="this.remove()">'
+    +'<div style="background:#fff;border-radius:14px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:Barlow,sans-serif;overflow:hidden;" onclick="event.stopPropagation()">'
+    +'<div style="padding:16px 20px;background:'+color+';color:#fff;display:flex;justify-content:space-between;align-items:center;">'
+    +'<div><div style="font-size:16px;font-weight:700;">'+title+' ('+items.length+')</div>'
+    +'<div style="font-size:12px;opacity:.85;margin-top:2px;">'+projectName+'</div></div>'
+    +'<button onclick="document.getElementById(\'_jobListPopup\').remove()" style="border:none;background:rgba(255,255,255,.2);color:#fff;width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>'
+    +'</div>'
+    +'<div style="max-height:380px;overflow-y:auto;">'+rows+'</div>'
+    +(totalStr?'<div style="padding:12px 16px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;background:#fafafa;"><span style="font-size:12px;color:#666;font-weight:600;">TOTAL</span><span style="font-size:16px;font-weight:700;color:'+color+';">'+totalStr+'</span></div>':'')
+    +'</div></div>';
+  var d=document.createElement('div');
+  d.innerHTML=html;
+  document.body.appendChild(d.firstChild);
 }
 
 function renderDetail(id){
@@ -1094,24 +1171,58 @@ function renderDetail(id){
   // Pre-compute vars for template
   const pm = c.contacts.find(x=>x.role==='project-manager') || c.contacts[0];
   // Pre-compute jobs list HTML
-  // A job is "archived" when it has at least one invoice and ALL of its invoices are Paid (payment received)
-  function isJobArchived(j){
-    var invs=j.invoices||[];
+  // ── Cycle-line logic ──
+  // A "cycle line" = one Estimate + its Change Orders (originalEst) + its Invoices (originalEst).
+  // A line is ARCHIVED when it has at least one invoice and ALL its invoices are Paid (payment received).
+  function lineInvoices(j, estId){
+    return (j.invoices||[]).filter(function(iv){return (iv.originalEst||iv.est)===estId || iv.originalEst===estId;});
+  }
+  function lineChangeOrders(j, estId){
+    return (j.changeOrders||[]).filter(function(co){return co.originalEst===estId;});
+  }
+  function isLinePaid(j, estId){
+    var invs=lineInvoices(j, estId);
     if(!invs.length) return false;
     return invs.every(function(iv){return (iv.status||'').toLowerCase()==='paid';});
   }
+  // Split a job's estimates into paid (archived) lines and pending (active) lines
+  function jobLines(j){
+    var ests=j.estimates||[];
+    var paid=[], pending=[];
+    ests.forEach(function(e){
+      if(isLinePaid(j, e.est)) paid.push(e); else pending.push(e);
+    });
+    return {paid:paid, pending:pending};
+  }
+  // Counts for the ACTIVE row = only pending lines and their related COs/invoices
+  function activeCounts(j){
+    var L=jobLines(j);
+    var pendIds=L.pending.map(function(e){return e.est;});
+    var cos=(j.changeOrders||[]).filter(function(co){return pendIds.indexOf(co.originalEst)!==-1;}).length;
+    var invs=(j.invoices||[]).filter(function(iv){return pendIds.indexOf(iv.originalEst)!==-1 && (iv.status||'').toLowerCase()!=='paid';}).length;
+    // jobs with no estimates array fall back to legacy single-line counting
+    if(!(j.estimates&&j.estimates.length)){
+      return {ests:(j.est?1:0), cos:(j.changeOrders?j.changeOrders.length:0), invs:(j.invoices?j.invoices.length:0)};
+    }
+    return {ests:L.pending.length, cos:cos, invs:invs};
+  }
+  // A job is fully archived (disappears from Active) when it has estimates and ALL lines are paid
+  function isJobFullyArchived(j){
+    if(!(j.estimates&&j.estimates.length)) return false;
+    return jobLines(j).pending.length===0;
+  }
   function buildJobRow(j){
-    var ests   = j.estimates    ? j.estimates.length    : (j.est ? 1 : 0);
-    var cos    = j.changeOrders ? j.changeOrders.length : 0;
-    var invs   = j.invoices     ? j.invoices.length     : 0;
+    var cnt=activeCounts(j);
+    var ests=cnt.ests, cos=cnt.cos, invs=cnt.invs;
     var jid    = j.est;
     var billCount = (j.billing&&j.billing.length)?j.billing.length:0;
     var pendBill  = j.pendingBilling || billCount===0;
-    var billBadge = pendBill
-      ? '<span title="No billing contacts assigned" style="display:inline-block;margin-left:8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--warning);background:rgba(217,164,65,.15);border:1px solid var(--warning);border-radius:20px;padding:2px 8px;vertical-align:middle;">⚠ Pending billing</span>'
-      : '';
+    var billCell = pendBill
+      ? '<span title="No billing contacts assigned" style="display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--warning);background:rgba(217,164,65,.15);border:1px solid var(--warning);border-radius:20px;padding:2px 8px;white-space:nowrap;">⚠ Pending billing</span>'
+      : '<span title="'+billCount+' billing contact'+(billCount===1?'':'s')+'" style="display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#16a34a;background:rgba(46,204,113,.12);border:1px solid #16a34a;border-radius:20px;padding:2px 8px;white-space:nowrap;">✓ '+billCount+' set</span>';
     return '<tr style="border-bottom:1px solid var(--border);">'
-      +'<td style="padding:10px 12px;font-weight:600;cursor:pointer;" onclick="goToEstimate(\'' +jid+ '\')">'+(j.projectName||j.jobName||j.address||'—')+billBadge+'</td>'
+      +'<td style="padding:10px 12px;font-weight:600;cursor:pointer;" onclick="goToEstimate(\'' +jid+ '\')">'+(j.projectName||j.jobName||j.address||'—')+'</td>'
+      +'<td style="padding:10px 12px;">'+billCell+'</td>'
       +'<td style="padding:10px 12px;color:var(--muted);">'+(j.date||'—')+'</td>'
       +'<td style="padding:10px 12px;color:var(--muted);">'+(j.contactName||'—')+'</td>'
       +'<td style="padding:10px 12px;text-align:center;">'
@@ -1129,6 +1240,7 @@ function renderDetail(id){
     return '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
       +'<thead><tr style="border-bottom:2px solid var(--border);">'
       +'<th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Project Name</th>'
+      +'<th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Billing</th>'
       +'<th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Created</th>'
       +'<th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Project Manager</th>'
       +'<th style="text-align:center;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Estimates</th>'
@@ -1138,26 +1250,72 @@ function renderDetail(id){
       +'<tbody>'+jobList.map(buildJobRow).join('')+'</tbody>'
       +'</table>';
   }
-  var activeJobs=allJobs.filter(function(j){return !isJobArchived(j);});
-  var archivedJobs=allJobs.filter(isJobArchived);
-  var jobsListHTML;
+  // Active = jobs that still have at least one pending (unpaid) line, or legacy jobs with no estimates
+  var activeJobs=allJobs.filter(function(j){return !isJobFullyArchived(j);});
+  // Archived = every PAID line across all jobs, flattened
+  var archivedLines=[];
+  allJobs.forEach(function(j){
+    jobLines(j).paid.forEach(function(e){
+      archivedLines.push({job:j, est:e});
+    });
+  });
+  // Build a row for a single archived cycle line
+  function buildArchivedLineRow(item){
+    var j=item.job, e=item.est;
+    var cos=lineChangeOrders(j, e.est);
+    var invs=lineInvoices(j, e.est);
+    var paidTotal=invs.reduce(function(s,iv){return s+(parseFloat(String(iv.amount).replace(/[^0-9.]/g,''))||0);},0);
+    var paidStr='$'+paidTotal.toLocaleString('en-US');
+    var lastDate=invs.length?invs[invs.length-1].date:(e.date||'—');
+    return '<tr style="border-bottom:1px solid var(--border);">'
+      +'<td style="padding:10px 12px;font-weight:600;cursor:pointer;" onclick="goToEstimate(\''+e.est+'\')">'+(j.projectName||j.jobName||j.address||'—')+'<div style="font-size:11px;color:var(--muted);font-weight:400;">'+(e.scope||e.est)+'</div></td>'
+      +'<td style="padding:10px 12px;text-align:center;">'
+        +'<span onclick="showLinePopup(event,'+c.id+',\''+e.est+'\',\'estimates\')" title="View estimate" style="display:inline-flex;align-items:center;justify-content:center;border-radius:20px;background:rgba(59,130,246,.12);color:#2563eb;font-size:11px;font-weight:700;padding:3px 10px;cursor:pointer;font-family:monospace;" onmouseover="this.style.background=\'rgba(59,130,246,.22)\'" onmouseout="this.style.background=\'rgba(59,130,246,.12)\'">'+e.est+'</span>'
+      +'</td>'
+      +'<td style="padding:10px 12px;color:var(--muted);">'+lastDate+'</td>'
+      +'<td style="padding:10px 12px;text-align:center;">'
+        +'<span onclick="showLinePopup(event,'+c.id+',\''+e.est+'\',\'changeOrders\')" title="View change orders" style="display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:20px;background:rgba(184,146,42,.12);color:var(--gold);font-size:12px;font-weight:700;padding:0 8px;cursor:pointer;" onmouseover="this.style.background=\'rgba(184,146,42,.22)\'" onmouseout="this.style.background=\'rgba(184,146,42,.12)\'">'+cos.length+'</span>'
+      +'</td>'
+      +'<td style="padding:10px 12px;text-align:center;">'
+        +'<span onclick="showLinePopup(event,'+c.id+',\''+e.est+'\',\'invoices\')" title="View invoices" style="display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:20px;background:rgba(46,204,113,.12);color:#16a34a;font-size:12px;font-weight:700;padding:0 8px;cursor:pointer;" onmouseover="this.style.background=\'rgba(46,204,113,.22)\'" onmouseout="this.style.background=\'rgba(46,204,113,.12)\'">'+invs.length+'</span>'
+      +'</td>'
+      +'<td style="padding:10px 12px;text-align:right;font-weight:600;">'+paidStr+'</td>'
+      +'<td style="padding:10px 12px;text-align:center;"><span style="display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#16a34a;background:rgba(46,204,113,.12);border:1px solid #16a34a;border-radius:20px;padding:2px 8px;white-space:nowrap;">✓ Paid</span></td>'
+      +'</tr>';
+  }
+  function archivedTableHTML(lines){
+    return '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+      +'<thead><tr style="border-bottom:2px solid var(--border);">'
+      +'<th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Project / Scope</th>'
+      +'<th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Estimate</th>'
+      +'<th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Paid Date</th>'
+      +'<th style="text-align:center;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Change Orders</th>'
+      +'<th style="text-align:center;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Invoices</th>'
+      +'<th style="text-align:right;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Amount Paid</th>'
+      +'<th style="text-align:center;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">Status</th>'
+      +'</tr></thead>'
+      +'<tbody>'+lines.map(buildArchivedLineRow).join('')+'</tbody>'
+      +'</table>';
+  }
+  var jobsListHTML, archivedBlockHTML='';
   if(allJobs.length){
     // Active block
     jobsListHTML = '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;">Active Jobs <span style="color:var(--text);">('+activeJobs.length+')</span></div>';
     jobsListHTML += activeJobs.length
       ? jobsTableHTML(activeJobs)
       : '<div style="padding:16px;font-size:13px;color:var(--muted2);font-style:italic;">No active jobs</div>';
-    // Archived block (collapsible)
-    if(archivedJobs.length){
-      jobsListHTML += '<div style="margin-top:20px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">'
-        +'<div onclick="toggleArchivedJobs('+c.id+')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surface2);cursor:pointer;user-select:none;">'
-          +'<div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">'
-            +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>'
-            +'Archived Jobs <span style="color:var(--text);">('+archivedJobs.length+')</span>'
+    // Archived block — its own separate card below; lists PAID cycle lines
+    if(archivedLines.length){
+      archivedBlockHTML = '<div class="card" style="margin-bottom:16px;">'
+        +'<div onclick="toggleArchivedJobs('+c.id+')" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">'
+          +'<div class="card-title" style="display:flex;align-items:center;gap:8px;margin:0;">'
+            +'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>'
+            +'Archived <span style="color:var(--muted);font-weight:600;">('+archivedLines.length+')</span>'
           +'</div>'
-          +'<span id="arch-chev-'+c.id+'" style="font-size:13px;color:var(--muted);transition:transform .15s;">▸</span>'
+          +'<span id="arch-chev-'+c.id+'" style="font-size:14px;color:var(--muted);transition:transform .15s;">▸</span>'
         +'</div>'
-        +'<div id="arch-body-'+c.id+'" style="display:none;padding:6px 0;">'+jobsTableHTML(archivedJobs)+'</div>'
+        +'<div style="font-size:11px;color:var(--muted);margin-top:2px;">Estimates fully invoiced and paid — each line completed its cycle.</div>'
+        +'<div id="arch-body-'+c.id+'" style="display:none;margin-top:12px;">'+archivedTableHTML(archivedLines)+'</div>'
       +'</div>';
     }
   } else {
@@ -1243,6 +1401,8 @@ function renderDetail(id){
       ${jobsListHTML}
     </div>
 
+    ${archivedBlockHTML}
+
     <div class="card">
       <div class="card-title" style="margin-bottom:0;">
         Company Information
@@ -1275,17 +1435,27 @@ function renderDetail(id){
 
       <!-- TAB: COMPANY CONTACTS -->
       <div class="tab-panel active" id="tab-pm-${c.id}">
-        <div style="display:flex;justify-content:flex-start;margin-bottom:12px;">
-          <button class="btn btn-ghost btn-sm" onclick="openAddContactModal(${c.id},'project-manager')">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            + Add contact
-          </button>
-        </div>
         ${(()=>{
           const allC=c.contacts.filter(x=>x.role==='project-manager'||x.role==='additional');
           if(!allC.length) return '<div style="padding:16px 0;color:var(--muted2);font-size:13px;font-style:italic;">No contacts added yet</div>';
-          return allC.map(ct=>`
-            <div class="contact-simple" style="justify-content:space-between;">
+          return allC.map(ct=>{
+            var ctJobs=(ct.jobs||[]);
+            var jobsHTML = (ct.role==='project-manager')
+              ? (ctJobs.length
+                ? '<div style="margin:8px 0 0 56px;padding-left:12px;border-left:2px solid var(--border);">'
+                  + ctJobs.map(function(j){
+                      var pn=j.projectName||j.jobName||j.address||'—';
+                      return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px;color:var(--muted);">'
+                        +'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+                        +'<span style="font-weight:600;color:var(--text);cursor:pointer;" onclick="goToEstimate(\''+j.est+'\')">'+pn+'</span>'
+                        +(j.date?'<span style="color:var(--muted2);">· '+j.date+'</span>':'')
+                        +'</div>';
+                    }).join('')
+                  + '</div>'
+                : '<div style="margin:6px 0 0 56px;font-size:11px;color:var(--muted2);font-style:italic;">No jobs assigned</div>')
+              : '';
+            return `
+            <div class="contact-simple" style="justify-content:space-between;flex-wrap:wrap;">
               <div style="display:flex;align-items:center;gap:12px;">
                 <div class="cs-av ${ct.color}">${ct.initials}</div>
                 <div class="cs-info">
@@ -1298,7 +1468,7 @@ function renderDetail(id){
                 </div>
               </div>
               <div style="display:flex;gap:6px;flex-shrink:0;">
-                <button class="btn btn-ghost btn-sm" style="padding:5px 10px;font-size:12px;" onclick="openEditContact(${c.id},'${ct.id}')">
+                <button class="btn btn-ghost btn-sm" style="padding:5px 10px;font-size:12px;" onclick="openJobAssignPanel(${c.id},'${ct.id}')">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   Edit
                 </button>
@@ -1307,53 +1477,73 @@ function renderDetail(id){
                   Delete
                 </button>
               </div>
-            </div>`).join('');
+              <div style="flex-basis:100%;">${jobsHTML}</div>
+            </div>`;
+          }).join('');
         })()}
       </div>
 
       <!-- TAB: BILLING CONTACTS -->
       <div class="tab-panel" id="tab-billing-${c.id}">
 
-        <!-- RECIPIENTS — hierarchical: PM as TO, linked billing contacts as CC -->
+        <!-- BILLING BY JOB — each job shows its PM + billing contacts, editable -->
         <div style="margin-bottom:24px;">
           <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Recipients — Estimates &amp; Invoices
+            Billing by Job
           </div>
 
           ${(()=>{
-            const pms = c.contacts.filter(ct=>ct.role==='project-manager');
-            const billingAll = c.contacts.filter(ct=>ct.role==='billing');
-            if(!pms.length && !billingAll.length) return '<div style="padding:20px;text-align:center;color:var(--muted2);font-size:13px;font-style:italic;border:1px solid var(--border);border-radius:10px;">No billing contacts yet. Add a Project Manager and link billing contacts from the contact form.</div>';
-
-            return pms.map(pm=>{
-              const linked = billingAll.filter(bc=>bc.pmRef===pm.name);
-              return `<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
-                <!-- PM row — TO -->
-                <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 16px;background:var(--surface2);border-bottom:${linked.length?'1px solid var(--border)':'none'};">
-                  <div class="cs-av ${pm.color}" style="width:34px;height:34px;font-size:12px;flex-shrink:0;">${pm.initials}</div>
+            const allJ = getAllJobs(c);
+            if(!allJ.length) return '<div style="padding:20px;text-align:center;color:var(--muted2);font-size:13px;font-style:italic;border:1px solid var(--border);border-radius:10px;">No jobs yet. Add a job to manage its billing recipients.</div>';
+            return allJ.map((j,jIdx)=>{
+              const pn = j.projectName||j.jobName||j.address||'—';
+              const pm = c.contacts.find(x=>x.id===j.contactId);
+              const billing = j.billing||[];
+              const bid = c.id+'_'+jIdx;
+              const billCount = billing.length;
+              const summary = pm
+                ? `${pm.name}${billCount?' · +'+billCount+' CC':' · ⚠ no billing'}`
+                : (billCount?billCount+' billing':'⚠ no billing');
+              const pmRow = pm ? `
+                <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 16px;border-bottom:${billing.length?'1px solid var(--border)':'none'};">
+                  <div class="cs-av ${pm.color}" style="width:30px;height:30px;font-size:11px;flex-shrink:0;">${pm.initials}</div>
                   <div>
                     <div style="font-size:13px;font-weight:700;">${pm.name}</div>
-                    <div style="font-size:12px;color:var(--muted);">${pm.email}</div>
-                    <div style="font-size:11px;color:var(--muted2);">Project Manager</div>
+                    <div style="font-size:12px;color:var(--muted);">${pm.email||''}</div>
                   </div>
-                  <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(58,126,212,.1);color:var(--info);">TO</span>
+                  <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(58,126,212,.1);color:var(--info);">PM · TO</span>
+                </div>` : '<div style="padding:10px 16px;font-size:12px;color:var(--muted2);font-style:italic;">No project manager assigned</div>';
+              const billRows = billing.length ? billing.map(bc=>`
+                <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:9px 16px 9px 32px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.01);">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:2px;height:26px;background:rgba(184,146,42,.25);border-radius:2px;flex-shrink:0;"></div>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:600;">${bc.name}</div>
+                    <div style="font-size:12px;color:var(--muted);">${bc.email||''}</div>
+                  </div>
+                  <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">CC</span>
+                </div>`).join('')
+                : '<div style="padding:9px 16px 9px 32px;font-size:12px;color:var(--warning);font-style:italic;">⚠ No billing contacts — pending billing information</div>';
+              return `<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
+                <div onclick="toggleBillingJob('${bid}')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--surface2);cursor:pointer;user-select:none;">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                    <span id="billjob-chev-${bid}" style="font-size:12px;color:var(--muted);transition:transform .15s;flex-shrink:0;">▸</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span style="font-size:13px;font-weight:700;">${pn}</span>
+                    <span style="font-size:11px;color:var(--muted);">${j.est||''}</span>
+                    <span style="font-size:11px;color:var(--muted2);margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">· ${summary}</span>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" style="padding:5px 10px;font-size:12px;flex-shrink:0;" onclick="event.stopPropagation();openJobAssignPanel(${c.id},'${j.contactId}','${j.est}')">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                  </button>
                 </div>
-                <!-- Linked billing contacts — CC -->
-                ${linked.length ? linked.map(bc=>`
-                  <div style="display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 16px 10px 32px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.01);">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                      <div style="width:2px;height:30px;background:rgba(184,146,42,.25);border-radius:2px;flex-shrink:0;"></div>
-                      <div class="cs-av ${bc.color}" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">${bc.initials}</div>
-                    </div>
-                    <div>
-                      <div style="font-size:13px;font-weight:600;">${bc.name}</div>
-                      <div style="font-size:12px;color:var(--muted);">${bc.email}</div>
-                      ${bc.title?`<div style="font-size:11px;color:var(--muted2);">${bc.title}</div>`:''}
-                    </div>
-                    <span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">CC</span>
-                  </div>`).join('')
-                  : '<div style="padding:10px 16px 10px 32px;font-size:12px;color:var(--muted2);font-style:italic;">No billing contacts linked — add from the PM form</div>'}
+                <div id="billjob-body-${bid}" style="display:none;border-top:1px solid var(--border);">
+                  ${pmRow}
+                  ${billRows}
+                </div>
               </div>`;
             }).join('');
           })()}
@@ -2203,6 +2393,143 @@ function reqAC(id, errId){
 // Extra billing contacts list (temporary storage while modal is open)
 let _extraBillingContacts = [];
 
+// Panel to reassign PM and edit billing contacts for each job of a contact
+let _japCustomerId=null, _japContactId=null, _japJobs=[];
+function openJobAssignPanel(customerId, contactId, estFilter){
+  _japCustomerId=parseInt(customerId);
+  _japContactId=contactId;
+  const c=CUSTOMERS.find(x=>x.id===_japCustomerId);
+  if(!c) return;
+  const ct=c.contacts.find(x=>x.id===contactId);
+  if(!ct) return;
+  let jobs=ct.jobs||[];
+  if(estFilter) jobs=jobs.filter(function(j){return j.est===estFilter;});
+  _japJobs=jobs;
+  // PM dropdown options (all contacts)
+  function pmOptsFor(selId){
+    var o='';
+    c.contacts.forEach(function(x){
+      o+='<option value="'+x.id+'"'+(String(x.id)===String(selId)?' selected':'')+'>'+x.name+(x.title?' — '+x.title:'')+'</option>';
+    });
+    return o;
+  }
+  var jobsHTML = jobs.length ? jobs.map(function(j,idx){
+    var pn=j.projectName||j.jobName||j.address||'Job '+(idx+1);
+    var billing=(j.billing||[]);
+    var billRows=billing.map(function(b){
+      return '<div id="_jap_bill_'+idx+'_'+b.id+'" data-cid="'+b.id+'" class="_jap_bill_'+idx+'" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;background:#fff;">'
+        +'<span style="flex:1;font-size:13px;"><span style="font-weight:600;">'+b.name+'</span>'+(b.email?'<span style="font-size:11px;color:var(--muted);"> · '+b.email+'</span>':'')+'</span>'
+        +'<button type="button" onclick="japBillRemove('+idx+',\''+b.id+'\')" style="border:none;background:none;color:var(--danger);font-size:15px;cursor:pointer;line-height:1;">×</button>'
+        +'</div>';
+    }).join('');
+    var billDrop='<option value="">— Add billing contact —</option>';
+    c.contacts.forEach(function(x){
+      if(!billing.some(function(b){return String(b.id)===String(x.id);})) billDrop+='<option value="'+x.id+'">'+x.name+'</option>';
+    });
+    return '<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;background:var(--surface2);">'
+      +'<div style="font-weight:700;font-size:14px;margin-bottom:10px;">'+pn+'<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px;">'+(j.est||'')+'</span></div>'
+      +'<div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;">Project Manager</label>'
+        +'<select id="_jap_pm_'+idx+'" style="width:100%;padding:8px 11px;border:1.5px solid var(--border2);border-radius:8px;font-family:Barlow,sans-serif;font-size:13px;background:#fff;outline:none;">'+pmOptsFor(j.__pmId||contactId)+'</select></div>'
+      +'<div><label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;">Billing contacts</label>'
+        +'<div id="_jap_billlist_'+idx+'">'+billRows+'</div>'
+        +'<select id="_jap_billdrop_'+idx+'" onchange="japBillAdd('+idx+',this.value)" style="width:100%;padding:8px 11px;border:1.5px solid var(--border2);border-radius:8px;font-family:Barlow,sans-serif;font-size:13px;background:#fff;outline:none;cursor:pointer;margin-top:6px;">'+billDrop+'</select>'
+      +'</div>'
+      +'</div>';
+  }).join('') : '<div style="padding:16px;font-size:13px;color:var(--muted2);font-style:italic;">This contact has no jobs assigned.</div>';
+
+  const modal=document.createElement('div');
+  modal.id='_japModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999998;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;';
+  modal.onclick=function(ev){if(ev.target===modal)closeJobAssignPanel();};
+  modal.innerHTML=
+    '<div style="background:#fff;border-radius:14px;max-width:560px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:Barlow,sans-serif;overflow:hidden;">'
+    +'<div style="padding:20px 24px;border-bottom:1px solid var(--border);">'
+    +'<div style="font-size:20px;font-weight:700;">Edit jobs — '+ct.name+'</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-top:2px;">Reassign the project manager and billing contacts for each job.</div>'
+    +'</div>'
+    +'<div style="padding:20px 24px;max-height:60vh;overflow-y:auto;">'+jobsHTML+'</div>'
+    +'<div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;">'
+    +'<button onclick="closeJobAssignPanel()" style="padding:9px 18px;border-radius:8px;border:1.5px solid var(--border2);background:none;font-family:Barlow,sans-serif;font-size:14px;cursor:pointer;">Cancel</button>'
+    +'<button onclick="saveJobAssignPanel()" style="padding:9px 20px;border-radius:8px;border:none;background:var(--gold);color:#fff;font-family:Barlow,sans-serif;font-size:14px;font-weight:600;cursor:pointer;">✓ Save changes</button>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+}
+function closeJobAssignPanel(){
+  var m=document.getElementById('_japModal');
+  if(m) m.parentNode.removeChild(m);
+}
+function japBillAdd(idx, cid){
+  if(!cid) return;
+  var c=CUSTOMERS.find(x=>x.id===_japCustomerId);
+  if(!c) return;
+  var ct=c.contacts.find(x=>String(x.id)===String(cid));
+  if(!ct) return;
+  var list=document.getElementById('_jap_billlist_'+idx);
+  var drop=document.getElementById('_jap_billdrop_'+idx);
+  if(!list||!drop) return;
+  if(document.getElementById('_jap_bill_'+idx+'_'+cid)){drop.value='';return;}
+  var row=document.createElement('div');
+  row.id='_jap_bill_'+idx+'_'+cid;
+  row.className='_jap_bill_'+idx;
+  row.setAttribute('data-cid',cid);
+  row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;background:#fff;';
+  row.innerHTML='<span style="flex:1;font-size:13px;"><span style="font-weight:600;">'+ct.name+'</span>'+(ct.email?'<span style="font-size:11px;color:var(--muted);"> · '+ct.email+'</span>':'')+'</span>'
+    +'<button type="button" onclick="japBillRemove('+idx+',\''+cid+'\')" style="border:none;background:none;color:var(--danger);font-size:15px;cursor:pointer;line-height:1;">×</button>';
+  list.appendChild(row);
+  var opt=drop.querySelector('option[value="'+cid+'"]');
+  if(opt) opt.parentNode.removeChild(opt);
+  drop.value='';
+}
+function japBillRemove(idx, cid){
+  var row=document.getElementById('_jap_bill_'+idx+'_'+cid);
+  if(row)row.parentNode.removeChild(row);
+  var c=CUSTOMERS.find(x=>x.id===_japCustomerId);
+  var drop=document.getElementById('_jap_billdrop_'+idx);
+  if(c&&drop){
+    var ct=c.contacts.find(x=>String(x.id)===String(cid));
+    if(ct&&!drop.querySelector('option[value="'+cid+'"]')){
+      var opt=document.createElement('option');opt.value=cid;opt.textContent=ct.name;drop.appendChild(opt);
+    }
+  }
+}
+function saveJobAssignPanel(){
+  var c=CUSTOMERS.find(x=>x.id===_japCustomerId);
+  if(!c) return;
+  var ct=c.contacts.find(x=>x.id===_japContactId);
+  if(!ct) return;
+  var jobs=_japJobs.slice();
+  jobs.forEach(function(j,idx){
+    // Collect billing for this job
+    var billing=[];
+    Array.prototype.forEach.call(document.querySelectorAll('._jap_bill_'+idx),function(row){
+      var cid=row.getAttribute('data-cid');
+      var bc=c.contacts.find(function(x){return String(x.id)===String(cid);});
+      if(bc&&!billing.some(function(b){return String(b.id)===String(bc.id);})) billing.push({id:bc.id,name:bc.name,email:bc.email,phone:bc.phone});
+    });
+    j.billing=billing;
+    j.pendingBilling=billing.length===0;
+    // Reassign PM if changed
+    var sel=document.getElementById('_jap_pm_'+idx);
+    var newPmId=sel?sel.value:_japContactId;
+    if(String(newPmId)!==String(_japContactId)){
+      var newPm=c.contacts.find(function(x){return String(x.id)===String(newPmId);});
+      if(newPm){
+        // remove from current contact, add to new
+        ct.jobs=ct.jobs.filter(function(x){return x!==j;});
+        if(!newPm.jobs)newPm.jobs=[];
+        newPm.jobs.push(j);
+      }
+    }
+  });
+  closeJobAssignPanel();
+  renderDetail(_japCustomerId);
+  renderList();
+  var fl=document.createElement('div');
+  fl.style.cssText='position:fixed;bottom:24px;right:24px;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999999;box-shadow:0 4px 20px rgba(0,0,0,.2);background:#2ecc71;';
+  fl.textContent='✓ Job assignments updated';
+  document.body.appendChild(fl);setTimeout(function(){if(fl.parentNode)fl.parentNode.removeChild(fl);},3000);
+}
+
 function openEditContact(customerId, contactId){
   const c = CUSTOMERS.find(x=>x.id===parseInt(customerId));
   if(!c) return;
@@ -3003,7 +3330,7 @@ function openAddJobModal(cid){
   // Build billing dropdown options (first name only) from all customer contacts
   var billingDropOpts='<option value="">— Select a contact —</option>';
   c.contacts.forEach(function(ct){
-    var first=(ct.name||'').trim().split(' ')[0]||ct.name||'Contact';
+    var first=(ct.name||'').trim()||'Contact';
     billingDropOpts+='<option value="'+ct.id+'">'+first+'</option>';
   });
 
@@ -3121,7 +3448,7 @@ function ajBillRemove(id){
   if(c&&drop){
     var ct=c.contacts.find(function(x){return String(x.id)===String(id);});
     if(ct&&!drop.querySelector('option[value="'+id+'"]')){
-      var first=(ct.name||'').trim().split(' ')[0]||ct.name||'Contact';
+      var first=(ct.name||'').trim()||'Contact';
       var opt=document.createElement('option');
       opt.value=id;opt.textContent=first;
       drop.appendChild(opt);
@@ -3334,7 +3661,7 @@ function openBillingPopup(){
   if(existing) existing.parentNode.removeChild(existing);
   var dropOpts='<option value="">— Select a contact —</option>';
   c.contacts.forEach(function(ct){
-    var first=(ct.name||'').trim().split(' ')[0]||ct.name||'Contact';
+    var first=(ct.name||'').trim()||'Contact';
     dropOpts+='<option value="'+ct.id+'">'+first+'</option>';
   });
   var html='<div id="_billOverlay" onclick="if(event.target===this)closeBillingPopup()" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999998;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;">'
