@@ -1168,17 +1168,18 @@ function renderDetail(id){
   const billing = allJobs.filter(j=>j.status==='Ready to bill').length;
 
   const jobCardsHTML = allJobs.length ? allJobs.map(j=>`
-    <div class="job-card" onclick="goToEstimate('${j.est}')">
+    <div class="job-card" ${j.est?`onclick="goToEstimate('${j.est}')"`:''}>
       <div class="jc-top">
-        <div class="jc-est">${j.est}</div>
+        <div class="jc-est">${j.est||'<span style="color:var(--muted2);font-weight:600;">No estimate</span>'}</div>
         <span class="sp ${STATUS_CLASS[j.status]||'sp-pending'}">${j.status}</span>
       </div>
       <div class="jc-address">${j.address}</div>
-      <div class="jc-contact">${j.contactName}</div>
+      <div class="jc-contact">${j.contactName||''}</div>
       <div class="jc-bottom">
         <div class="jc-amt">${j.amount}</div>
         <div class="jc-date">${j.date}</div>
       </div>
+      ${j.est?'':`<button class="btn btn-gold btn-sm" style="margin-top:8px;width:100%;" onclick="event.stopPropagation();goCreateEstimate('${encodeURIComponent(j.jobName||'')}','${encodeURIComponent(c.name)}','${encodeURIComponent(j.address||'')}')">+ Create estimate</button>`}
     </div>`).join('') : '<div style="color:var(--muted2);font-size:13px;font-style:italic;">No jobs yet</div>';
 
   const contactCardsHTML = c.contacts.map(ct=>`
@@ -3884,9 +3885,8 @@ function ajCommitJob(skipLater){
   var requiresSOV=sovRadio&&sovRadio.value==='yes';
   var waiverRadio=document.querySelector('input[name="_aj_waiver"]:checked');
   var requiresWaivers=waiverRadio&&waiverRadio.value==='yes';
-  var estNum='EST-'+String(Math.floor(Math.random()*900)+100);
   var pd=_ajPendingJobData;
-  var newJob={est:estNum,address:pd.addr,po:pd.po,jobName:pd.jobName,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),amount:'$0',status:'Pending scheduled',billing:billing,pendingBilling:pendingBilling,hasSpecialInstructions:siOn,specialInstructions:siText,requiresSOV:requiresSOV,requiresWaivers:requiresWaivers};
+  var newJob={est:'',address:pd.addr,po:pd.po,jobName:pd.jobName,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),amount:'$0',status:'No estimate',billing:billing,pendingBilling:pendingBilling,hasSpecialInstructions:siOn,specialInstructions:siText,requiresSOV:requiresSOV,requiresWaivers:requiresWaivers};
   var pmVal=(document.getElementById('_aj_pm')||{value:''}).value;
   var gv=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
   if(pmVal==='new'){
@@ -3900,19 +3900,32 @@ function ajCommitJob(skipLater){
     else{var f2=cust.contacts[0];if(f2){if(!f2.jobs)f2.jobs=[];f2.jobs.push(newJob);}}
   }
   _ajPendingJobData=null;
+  if(window.SDD) window.SDD.save();
   closeBillingPopup();closeAddJobModal();renderDetail(_ajCustomerId);renderList();
-  if(_ajNavigateAfterSave){
-    _ajNavigateAfterSave=false;
-    window.location.href='/sdd-jobs.html?est='+encodeURIComponent(estNum);
-    return;
-  }
-  var fl=document.createElement('div');
-  fl.style.cssText='position:fixed;bottom:24px;right:24px;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999999;box-shadow:0 4px 20px rgba(0,0,0,.2);background:#2ecc71;';
-  fl.textContent='✓ Job added — '+estNum+(pendingBilling?' (pending billing)':'');
-  document.body.appendChild(fl);setTimeout(function(){if(fl.parentNode)fl.parentNode.removeChild(fl);},3500);
+  // Ask whether to create an estimate for this brand-new job
+  askCreateEstimate(newJob, cust);
 }
 
-
+// Ask the user if they want to create an estimate for the job they just created
+function askCreateEstimate(job, cust){
+  var ex=document.getElementById('_estAskBg'); if(ex) ex.remove();
+  var bg=document.createElement('div');
+  bg.id='_estAskBg';
+  bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000000;display:flex;align-items:center;justify-content:center;padding:24px;';
+  bg.onclick=function(ev){if(ev.target===bg)bg.remove();};
+  bg.innerHTML='<div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:\'Barlow\',sans-serif;overflow:hidden;">'
+    +'<div style="padding:22px 24px 8px;"><div style="font-size:19px;font-weight:700;">Job created ✓</div>'
+    +'<div style="font-size:13px;color:var(--muted);margin-top:6px;">"'+(job.jobName||'New job')+'" was added for '+cust.name+'. Do you want to create an estimate for it now?</div></div>'
+    +'<div style="padding:8px 24px 22px;display:flex;gap:10px;justify-content:flex-end;">'
+      +'<button onclick="document.getElementById(\'_estAskBg\').remove()" style="padding:10px 16px;border:1px solid var(--border2);border-radius:8px;background:none;color:var(--muted);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">Not now</button>'
+      +'<button onclick="goCreateEstimate(\''+encodeURIComponent(job.jobName||'')+'\',\''+encodeURIComponent(cust.name)+'\',\''+encodeURIComponent(job.address||'')+'\')" style="padding:10px 16px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">Create estimate</button>'
+    +'</div></div>';
+  document.body.appendChild(bg);
+}
+function goCreateEstimate(jobName, customer, addr){
+  document.getElementById('_estAskBg') && document.getElementById('_estAskBg').remove();
+  window.location.href='/sdd-estimates.html?newFor='+jobName+'&customer='+customer+'&addr='+addr;
+}
 function saveNewJob(){
   function gv(id){var el=document.getElementById(id);return el?el.value.trim():'';}
   var snum=gv('aj_snum'),sname=gv('aj_sname'),stype_v=gv('aj_stype'),city=gv('aj_city'),state_v=(document.getElementById('aj_state')||{value:'CA'}).value,zip=gv('aj_zip');
@@ -3925,8 +3938,7 @@ function saveNewJob(){
   var c=CUSTOMERS.find(function(x){return x.id===_ajCustomerId;});if(!c)return;
   var dups=findDuplicateJobs(c,addr);
   if(dups.length>0&&!_ajDuplicateConfirmed){ajCheckDuplicate();return;}
-  var estNum='EST-'+String(Math.floor(Math.random()*900)+100);
-  var newJob={est:estNum,address:addr,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),amount:'$0',status:'Pending scheduled'};
+  var newJob={est:'',address:addr,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),amount:'$0',status:'No estimate'};
   var pmVal=(document.getElementById('aj_pm_select')||{value:''}).value;
   var avC=['av-gold','av-info','av-success','av-warning'];
   if(pmVal==='new'){
@@ -3939,9 +3951,9 @@ function saveNewJob(){
     if(pm){if(!pm.jobs)pm.jobs=[];pm.jobs.push(newJob);}
     else{var f2=c.contacts[0];if(f2){if(!f2.jobs)f2.jobs=[];f2.jobs.push(newJob);}}
   }
+  if(window.SDD) window.SDD.save();
   closeAddJobModal();renderDetail(_ajCustomerId);renderList();
-  var fl=document.createElement('div');fl.style.cssText='position:fixed;bottom:24px;right:24px;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);background:var(--success);';
-  fl.textContent='✓ Job added — '+estNum;document.body.appendChild(fl);setTimeout(function(){fl.remove();},3500);
+  askCreateEstimate(newJob, c);
 }
 // Auto-persist shared data so changes survive reloads / navigation between modules
 if(window.SDD){

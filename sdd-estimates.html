@@ -2918,12 +2918,29 @@ document.addEventListener('DOMContentLoaded',function(){
   // Auto-select from URL param
   const params=new URLSearchParams(window.location.search);
   const estNum=params.get('est');
+  const newFor=params.get('newFor');
   let initId=1;
   if(estNum){const found=ESTIMATES.find(e=>e.num===estNum);if(found)initId=found.id;}
   renderPipeline();
   renderList();
   updateFilterCounts();
   selectEst(initId);
+  // If we arrived here to create a new estimate for a job, open the form prefilled
+  if(newFor!==null){
+    var cstm=decodeURIComponent(params.get('customer')||'');
+    var jn=decodeURIComponent(newFor||'');
+    var ad=decodeURIComponent(params.get('addr')||'');
+    openNewEstForm();
+    setTimeout(function(){
+      var cs=document.getElementById('f_customer');
+      if(cs && cstm){ // add the customer if not present, then select it
+        var has=false; for(var i=0;i<cs.options.length;i++){ if(cs.options[i].text===cstm){has=true;cs.selectedIndex=i;break;} }
+        if(!has){ var o=document.createElement('option'); o.text=cstm; cs.add(o,0); cs.selectedIndex=0; }
+      }
+      var jnf=document.getElementById('f_jobname'); if(jnf&&jn) jnf.value=jn;
+      var af=document.getElementById('f_addr'); if(af&&ad){ af.value=ad.split(',')[0]||ad; }
+    },50);
+  }
 });
 
 // ══ PDF PREVIEW FLOW ══
