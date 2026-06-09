@@ -14,7 +14,7 @@
   --text:#1A1A1A;--muted:#777;--muted2:#AAA;
   --danger:#D94F4F;--success:#3A9E6A;--warning:#C8822A;--info:#3A7ED4;
 }
-body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;min-height:100vh;display:flex;flex-direction:column;}
+body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;min-height:100vh;display:flex;flex-direction:column;}
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;}
 .logo{display:flex;align-items:center;gap:12px;}
 .logo-svg .s-bar{fill:var(--gold);}.logo-svg .letters{fill:#1A1A1A;}
@@ -446,6 +446,31 @@ svg{display:block;}
               <input type="text" id="f_zip" placeholder="92103" maxlength="10">
               <div class="ferr" id="e_zip">Required</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fsec">
+        <div class="fsec-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Payment terms</div>
+        <div class="ff" style="margin-bottom:0;">
+          <label>Does this customer have payment terms?</label>
+          <div style="display:flex;gap:18px;margin-top:8px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;">
+              <input type="radio" name="f_haspt" value="yes" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" onchange="togglePaymentTerms(true)"> Yes
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;">
+              <input type="radio" name="f_haspt" value="no" checked style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;" onchange="togglePaymentTerms(false)"> No
+            </label>
+          </div>
+          <div id="f_pt_wrap" style="display:none;margin-top:12px;">
+            <label>Terms</label>
+            <select id="f_payment_terms">
+              <option>Net 30</option>
+              <option>Net 15</option>
+              <option>50% deposit / 50% completion</option>
+              <option>Progress billing</option>
+              <option>Due on completion</option>
+            </select>
           </div>
         </div>
       </div>
@@ -2291,6 +2316,9 @@ function reqFld(id, errId){
   return ok;
 }
 
+function togglePaymentTerms(on){
+  var w=document.getElementById('f_pt_wrap'); if(w) w.style.display=on?'block':'none';
+}
 function saveCustomer(){
   if(window._editingCustomerId){
     const ex=CUSTOMERS.find(x=>x.id===parseInt(window._editingCustomerId));
@@ -2354,6 +2382,7 @@ function saveCustomer(){
     since:(document.getElementById('f_since')||{value:'2026'}).value,
     type:typeVal,
     waiver:(document.getElementById('f_waiver')||{value:'conditional'}).value,
+    paymentTerms:((document.querySelector('input[name="f_haspt"]:checked')||{value:'no'}).value==='yes')?(document.getElementById('f_payment_terms')||{value:''}).value:'',
     portal:(document.getElementById('f_billing')||{value:''}).value==='Client portal',
     notes:((document.getElementById('f_notes')||{value:''}).value||'').trim(),
     contacts:[{
@@ -2363,6 +2392,7 @@ function saveCustomer(){
       title:document.getElementById('f_title').value.trim(), jobs:[]
     }]
   });
+  if(window.SDD) window.SDD.save();
 
   closeModal();
   activeId=newId;

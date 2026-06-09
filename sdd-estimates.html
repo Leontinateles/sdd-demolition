@@ -15,7 +15,7 @@
   --danger:#D94F4F;--success:#3A9E6A;--warning:#C8822A;--info:#3A7ED4;
   --purple:#7C5CBF;
 }
-body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;min-height:100vh;display:flex;flex-direction:column;}
+body{background:#F0EEE9;color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;min-height:100vh;display:flex;flex-direction:column;}
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;}
 .logo{display:flex;align-items:center;gap:12px;}
 .logo-svg .s-bar{fill:var(--gold);}.logo-svg .letters{fill:#1A1A1A;}
@@ -540,16 +540,6 @@ svg{display:block;}
         </div>
       </div>
 
-      <div class="form-sec">
-        <div class="form-sec-title">Billing & terms</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="ff"><label>Waiver type</label><select id="f_waiver"><option>Conditional waiver</option><option>Unconditional waiver</option><option>No waiver</option></select></div>
-          <div class="ff"><label>Payment terms</label><select id="f_terms"><option>Net 30</option><option>Net 15</option><option>50% deposit / 50% completion</option><option>Progress billing</option><option>Due on completion</option></select></div>
-          <div class="ff"><label>Tax rate (%)</label><input type="number" id="f_tax" value="8.75"></div>
-          <div class="ff"><label>Billing contact</label><select id="f_billing"><option>Maria Rodriguez — billing@abcconstruction.com</option><option>David Chen — d.chen@horizonbuilders.com</option></select></div>
-          <div class="ff" style="grid-column:span 2;"><label>Notes / special conditions</label><textarea id="f_notes" placeholder="Access requirements, permit notes..."></textarea></div>
-        </div>
-      </div>
     </div>
     <div class="form-ft">
       <div style="font-size:13px;color:var(--muted);">Status: <strong style="color:var(--purple);">Estimate Pending</strong> — saved as draft</div>
@@ -2638,6 +2628,11 @@ function openEditEstimate(id){
   openNewEstForm();
 }
 
+function _estCustomerObj(){
+  var name=(document.getElementById('f_customer')||{value:''}).value;
+  if(window.SDD && window.SDD.customers){ return window.SDD.customers.find(function(c){return c.name===name;})||null; }
+  return null;
+}
 function saveNewEstimate(action){
   // If editing existing estimate
   if(window._editingEstId){
@@ -2707,8 +2702,8 @@ function saveNewEstimate(action){
     termsText: termsType ? TERMS_AND_CONDITIONS[termsType]?.text : '',
     status: action==='send'?'pending-approval':'estimate-pending',
     amount:0, date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
-    schedStart:'', schedEnd:'', waiver:document.getElementById('f_waiver').value,
-    payment:document.getElementById('f_terms').value,
+    schedStart:'', schedEnd:'', waiver:(_estCustomerObj()&&_estCustomerObj().waiver)||'',
+    payment:(_estCustomerObj()&&_estCustomerObj().paymentTerms)||'',
     timeline:[
       {action:'Estimate created — Estimate Pending', by:createdBy, date:'Today', color:'#7C5CBF'},
       ...(action==='send'?[
