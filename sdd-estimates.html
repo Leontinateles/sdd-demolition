@@ -1570,12 +1570,10 @@ function esTermsBlock(e){
     <div id="es-clauses-${e.id}" style="border:1px solid #ECECEC;border-radius:8px;padding:4px 10px;">${clauses}</div>`;
 }
 // Bills for this estimate: invoices billed to client (Paid/Unpaid) + vendor bills (payable)
-function billsSectionHTML(e){
+function invoicesBilledHTML(e){
   const invs = e.invoices||[];
-  const vendorBills = e.vendorBills||[];
   const fmtN = v=>'$'+Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2});
   const isPaid = s=>(s||'').toLowerCase()==='paid';
-  // Client invoices
   let invRows = invs.length ? invs.map(iv=>{
     const paid=isPaid(iv.status);
     return `<tr>
@@ -1583,29 +1581,13 @@ function billsSectionHTML(e){
       <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;color:#333;">${iv.date||''}</td>
       <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;text-align:right;font-weight:600;">${fmtN(iv.amount)}</td>
       <td style="padding:8px;border-bottom:1px solid #F0F0F0;text-align:center;">
-        <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;${paid?'background:rgba(46,204,113,.12);color:#16a34a;':'background:rgba(217,79,79,.1);color:#D94F4F;border:1px solid #D94F4F;'}">${paid?'✓ Paid':'Unpaid'}</span>
+        <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;${paid?'background:rgba(46,204,113,.12);color:#16a34a;':'background:rgba(217,79,79,.1);color:#D94F4F;border:1px solid #D94F4F;'}">${paid?'\u2713 Paid':'Unpaid'}</span>
       </td>
     </tr>`;
   }).join('') : '<tr><td colspan="4" style="padding:10px 8px;font-size:12px;color:#999;font-style:italic;">No invoices yet for this estimate.</td></tr>';
   const invPaidTotal = invs.filter(iv=>isPaid(iv.status)).reduce((s,iv)=>s+(Number(iv.amount)||0),0);
   const invUnpaidTotal = invs.filter(iv=>!isPaid(iv.status)).reduce((s,iv)=>s+(Number(iv.amount)||0),0);
-  // Vendor bills (accounts payable)
-  let vbRows = vendorBills.length ? vendorBills.map(v=>{
-    const paid=isPaid(v.status);
-    return `<tr>
-      <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;color:#333;font-weight:600;">${v.vendor||''}</td>
-      <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;color:#777;">${v.account||''}</td>
-      <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;text-align:right;font-weight:600;">${fmtN(v.amount)}</td>
-      <td style="padding:8px;border-bottom:1px solid #F0F0F0;text-align:center;">
-        <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;${paid?'background:rgba(46,204,113,.12);color:#16a34a;':'background:rgba(217,79,79,.1);color:#D94F4F;border:1px solid #D94F4F;'}">${paid?'✓ Paid':'Pending'}</span>
-      </td>
-    </tr>`;
-  }).join('') : '<tr><td colspan="4" style="padding:10px 8px;font-size:12px;color:#999;font-style:italic;">No vendor bills recorded.</td></tr>';
-  const vbPaidTotal = vendorBills.filter(v=>isPaid(v.status)).reduce((s,v)=>s+(Number(v.amount)||0),0);
-  const vbPendingTotal = vendorBills.filter(v=>!isPaid(v.status)).reduce((s,v)=>s+(Number(v.amount)||0),0);
   return `
-  <div class="pdf-section" style="margin-top:0;">
-    <div class="pdf-section-title">Invoices billed to client</div>
     <table style="width:100%;border-collapse:collapse;">
       <thead><tr>
         <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#777;padding:7px 8px;border-bottom:2px solid #E0E0E0;text-align:left;">Invoice</th>
@@ -1615,12 +1597,29 @@ function billsSectionHTML(e){
       </tr></thead>
       <tbody>${invRows}</tbody>
     </table>
-    <div style="display:flex;justify-content:flex-end;gap:24px;padding:8px 8px;font-size:12px;">
+    <div style="display:flex;justify-content:flex-end;gap:18px;padding:10px 8px 0;font-size:12px;flex-wrap:wrap;">
       <span style="color:#16a34a;">Paid: <strong>${fmtN(invPaidTotal)}</strong></span>
       <span style="color:#D94F4F;">Unpaid: <strong>${fmtN(invUnpaidTotal)}</strong></span>
-    </div>
-
-    <div class="pdf-section-title" style="margin-top:18px;">Vendor bills (accounts payable)</div>
+    </div>`;
+}
+function vendorBillsHTML(e){
+  const vendorBills = e.vendorBills||[];
+  const fmtN = v=>'$'+Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2});
+  const isPaid = s=>(s||'').toLowerCase()==='paid';
+  let vbRows = vendorBills.length ? vendorBills.map(v=>{
+    const paid=isPaid(v.status);
+    return `<tr>
+      <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;color:#333;font-weight:600;">${v.vendor||''}</td>
+      <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;color:#777;">${v.account||''}</td>
+      <td style="padding:8px;border-bottom:1px solid #F0F0F0;font-size:12px;text-align:right;font-weight:600;">${fmtN(v.amount)}</td>
+      <td style="padding:8px;border-bottom:1px solid #F0F0F0;text-align:center;">
+        <span style="font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;${paid?'background:rgba(46,204,113,.12);color:#16a34a;':'background:rgba(217,79,79,.1);color:#D94F4F;border:1px solid #D94F4F;'}">${paid?'\u2713 Paid':'Pending'}</span>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="4" style="padding:10px 8px;font-size:12px;color:#999;font-style:italic;">No vendor bills recorded.</td></tr>';
+  const vbPaidTotal = vendorBills.filter(v=>isPaid(v.status)).reduce((s,v)=>s+(Number(v.amount)||0),0);
+  const vbPendingTotal = vendorBills.filter(v=>!isPaid(v.status)).reduce((s,v)=>s+(Number(v.amount)||0),0);
+  return `
     <table style="width:100%;border-collapse:collapse;">
       <thead><tr>
         <th style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#777;padding:7px 8px;border-bottom:2px solid #E0E0E0;text-align:left;">Vendor</th>
@@ -1630,12 +1629,12 @@ function billsSectionHTML(e){
       </tr></thead>
       <tbody>${vbRows}</tbody>
     </table>
-    <div style="display:flex;justify-content:flex-end;gap:24px;padding:8px 8px;font-size:12px;">
+    <div style="display:flex;justify-content:flex-end;gap:18px;padding:10px 8px 0;font-size:12px;flex-wrap:wrap;">
       <span style="color:#16a34a;">Paid: <strong>${fmtN(vbPaidTotal)}</strong></span>
       <span style="color:#D94F4F;">Pending to pay: <strong>${fmtN(vbPendingTotal)}</strong></span>
-    </div>
-  </div>`;
+    </div>`;
 }
+
 // Schedule of Values: all transactions (estimate + change orders + invoices) for THIS job
 function sovSectionHTML(e){
   const cos = ESTIMATES.filter(x=>x.isChangeOrder && (x.originalId===e.id || x.originalNum===e.num));
@@ -1918,36 +1917,60 @@ function renderDetail(id){
 
     ${rejHTML}
 
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
+      <div>
+        ${e.isChangeOrder ? `<div class="sheet"><div class="card"><div class="card-title">Change Order</div><div style="font-size:13px;color:var(--muted);">${e.description||''}</div><div class="totals-box"><div class="tot-row grand"><span>Net change</span><span style="color:var(--warning);">${fmt(e.netChange||e.amount)}</span></div></div></div></div>` : editableEstimateSheet(e)}
+      </div>
+
+      ${!e.isChangeOrder ? `
+      <div>
+        <div class="sheet">
+          <div class="card" style="padding:0;">
+            <div onclick="toggleEstSection('inv-${e.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;background:var(--surface2);border-radius:12px 12px 0 0;">
+              <div class="card-title" style="margin:0;">Invoices billed to client</div>
+              <span id="chev-inv-${e.id}" style="font-size:13px;color:var(--muted);transition:transform .15s;transform:rotate(90deg);">▸</span>
+            </div>
+            <div id="sec-inv-${e.id}" style="display:block;padding:16px 18px;">${invoicesBilledHTML(e)}</div>
+          </div>
+        </div>
+        <div class="sheet" style="margin-top:16px;">
+          <div class="card" style="padding:0;">
+            <div onclick="toggleEstSection('vb-${e.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;background:var(--surface2);border-radius:12px 12px 0 0;">
+              <div class="card-title" style="margin:0;">Vendor bills (A/P)</div>
+              <span id="chev-vb-${e.id}" style="font-size:13px;color:var(--muted);transition:transform .15s;transform:rotate(90deg);">▸</span>
+            </div>
+            <div id="sec-vb-${e.id}" style="display:block;padding:16px 18px;">${vendorBillsHTML(e)}</div>
+          </div>
+        </div>
+
+        ${schedHTML}
+
+        <!-- Collapsible: Notifications -->
+        <div class="sheet" style="margin-top:16px;">
+          <div class="card" style="padding:0;">
+            <div onclick="toggleEstSection('notif-${e.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;">
+              <div class="card-title" style="margin:0;">Notifications sent</div>
+              <span id="chev-notif-${e.id}" style="font-size:13px;color:var(--muted);transition:transform .15s;">▸</span>
+            </div>
+            <div id="sec-notif-${e.id}" style="display:none;padding:0 18px 16px;">${notifHTML}</div>
+          </div>
+        </div>
+
+        <!-- Collapsible: Activity log -->
+        <div class="sheet" style="margin-top:16px;">
+          <div class="card" style="padding:0;">
+            <div onclick="toggleEstSection('activity-${e.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;">
+              <div class="card-title" style="margin:0;">Activity log</div>
+              <span id="chev-activity-${e.id}" style="font-size:13px;color:var(--muted);transition:transform .15s;">▸</span>
+            </div>
+            <div id="sec-activity-${e.id}" style="display:none;padding:0 18px 16px;">${tlHTML}</div>
+          </div>
+        </div>
+      </div>` : '<div></div>'}
+    </div>
+
     <div>
-      ${e.isChangeOrder ? `<div class="sheet"><div class="card"><div class="card-title">Change Order</div><div style="font-size:13px;color:var(--muted);">${e.description||''}</div><div class="totals-box"><div class="tot-row grand"><span>Net change</span><span style="color:var(--warning);">${fmt(e.netChange||e.amount)}</span></div></div></div></div>` : editableEstimateSheet(e)}
-
-      ${schedHTML}
-
-      ${!e.isChangeOrder ? `<div class="sheet" style="margin-top:16px;"><div class="card"><div style="padding:8px 4px 20px;">${billsSectionHTML(e)}</div></div></div>` : ''}
-
       ${e.requiresSOV && !e.isChangeOrder ? `<div class="sheet" style="margin-top:16px;"><div class="card">${sovSectionHTML(e)}</div></div>` : ''}
-
-      <!-- Collapsible: Notifications -->
-      <div class="sheet" style="margin-top:16px;">
-        <div class="card" style="padding:0;">
-          <div onclick="toggleEstSection('notif-${e.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;">
-            <div class="card-title" style="margin:0;">Notifications sent</div>
-            <span id="chev-notif-${e.id}" style="font-size:13px;color:var(--muted);transition:transform .15s;">▸</span>
-          </div>
-          <div id="sec-notif-${e.id}" style="display:none;padding:0 18px 16px;">${notifHTML}</div>
-        </div>
-      </div>
-
-      <!-- Collapsible: Activity log -->
-      <div class="sheet" style="margin-top:16px;">
-        <div class="card" style="padding:0;">
-          <div onclick="toggleEstSection('activity-${e.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;">
-            <div class="card-title" style="margin:0;">Activity log</div>
-            <span id="chev-activity-${e.id}" style="font-size:13px;color:var(--muted);transition:transform .15s;">▸</span>
-          </div>
-          <div id="sec-activity-${e.id}" style="display:none;padding:0 18px 16px;">${tlHTML}</div>
-        </div>
-      </div>
     </div>
   </div>`;
 }
